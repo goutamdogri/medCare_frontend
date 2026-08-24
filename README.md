@@ -1,75 +1,77 @@
-# React + TypeScript + Vite
+# MedCare · Supply Chain Control Tower
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Judge-facing SPA for the pharma supply-chain ML system: demand sensing with
+flu-leading indicators, shortage watchlist with live acknowledgement workflow,
+expiry-aware transfers, the daily replenishment plan and an AI escalation brief.
 
-Currently, two official plugins are available:
+**Stack** — Vite · React 19 · TypeScript · Tailwind CSS v4 · TanStack Query ·
+Recharts · React Router · lucide-react.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Quick start
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev        # http://localhost:5173 (proxies /api + /actuator → :3001)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Requires the API to be reachable at `http://localhost:3001`
+(`GET /actuator/health` must return `{"status":"UP"}`). Override the target
+origin with `VITE_API_ORIGIN` or call the API from a different base with
+`VITE_API_BASE` (both optional — defaults assume the standard setup).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm run build      # type-check + production bundle
+npm run lint       # eslint
+npm run preview    # serve the production build
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Pages ↔ outcomes
+
+| Route | Page | Outcome it proves |
+|---|---|---|
+| `/` | Command Center | Overall value — availability ↑, wastage ↓ |
+| `/demand` | Demand Sensing | Forecast accuracy via leading indicators |
+| `/shortages` | Shortage Watchlist | Fewer stock-outs + acknowledgement workflow |
+| `/expiry` | Expiry Rescue | Expiry-aware allocation, write-off reduction |
+| `/orders` | Order Book | The replenishment plan planners receive |
+| `/escalation` | Escalation Center | Review cadence + on-device AI brief |
+
+All pages are snapshot-driven: pick any `asOf` date in the top bar and every
+query refetches keyed by `[endpoint, asOf]` — never mixed snapshots.
+
+## Architecture
 
 ```
+src/
+├── api/            # fetch wrapper (error normalisation, query params)
+├── components/
+│   ├── charts/     # shared chart theme, tooltip, legend chips
+│   ├── domain/     # cross-page domain widgets (safety-stock audit)
+│   ├── layout/     # AppShell, Sidebar (+pipeline health chip), TopBar
+│   └── ui/         # design-system primitives (Card, Badge, Drawer, …)
+├── context/        # app state (asOf/theme/meta) + toast system
+├── features/       # one folder per page, self-contained widgets
+│   ├── command-center/  ├── demand-sensing/     ├── shortage-watchlist/
+│   ├── expiry-rescue/    └── order-book/
+├── hooks/          # TanStack Query hooks per backend domain
+├── lib/            # formatting (₹L/Cr), CSV export, class utils
+└── types/          # DTOs mirroring docs/backend-spec.md
+```
+
+### Conventions
+
+- **Theming** — semantic tokens (`bg-app`, `bg-card`, `text-ink`, `text-sub`,
+  `border-line`) map to `design-system/designTokens.json` via Tailwind v4
+  `@theme inline`; light/dark flips through a `.dark` class on `<html>`
+  (persisted in `localStorage`, applied pre-paint). Brand & feedback tokens are
+  purpose-named, never hue-named: `primary` (indigo — actions, active states,
+  focus), `secondary` (violet), `accent` (teal), `success`, `warning`,
+  `danger` (strictly alerts/errors/losses), `info`. Swap a hex once in
+  `src/index.css` and the whole UI follows.
+- **Data fetching** — every widget renders its own skeleton/error/empty state
+  via `<Widget query={…}>`; errors surface a retry button plus a toast,
+  never a blank screen.
+- **Numbers** — INR uses Indian short scale (`₹12.1L`, `₹1.03Cr`) via
+  `lib/format.ts`; MySQL DECIMAL strings are coerced with `num()`.
+- Backend contract: [`docs/backend-spec.md`](docs/backend-spec.md) · UI spec:
+  [`docs/frontend-spec.md`](docs/frontend-spec.md)
