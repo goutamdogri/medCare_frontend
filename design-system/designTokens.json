@@ -1,0 +1,17 @@
+{
+  "primaryCoral": "#FF4F32",
+  "vibrantPurple": "#8B5CF6",
+  "mintGreen": "#22C55E",
+  "goldenYellow": "#EAB308",
+  "softPeach": "#F87171",
+  "lightAppBackground": "#F1F2F4",
+  "lightCardBackground": "#FFFFFF",
+  "lightPrimaryText": "#1A1A1A",
+  "lightSecondaryText": "#737373",
+  "lightBorders": "#E5E7EB",
+  "darkAppBackground": "#0B0B0B",
+  "darkCardBackground": "#1C1C1E",
+  "darkPrimaryText": "#F9FAFB",
+  "darkSecondaryText": "#9CA3AF",
+  "darkBorders": "#2D2D30"
+}
