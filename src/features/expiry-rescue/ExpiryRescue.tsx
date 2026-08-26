@@ -36,14 +36,26 @@ export default function ExpiryRescue() {
 
   return (
     <div className="animate-fade-up space-y-5 sm:space-y-6">
-      <SegmentedControl<"transfers" | "inventory">
-        options={[
-          { value: "transfers", label: "Transfer plan" },
-          { value: "inventory", label: "Inventory analysis" },
-        ]}
-        value={tab}
-        onChange={setTab}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-extrabold tracking-tight text-ink sm:text-xl">
+            {tab === "transfers" ? "Transfer plan": "Inventory analysis"}
+          </h1>
+          <p className="mt-0.5 text-xs text-sub sm:text-sm">
+            {tab === "transfers"
+              ? "Stock moved out of expiry danger and what still remains at risk."
+              : "Inventory ageing and residual write-off exposure."}
+          </p>
+        </div>
+        <SegmentedControl<"transfers" | "inventory">
+          options={[
+            { value: "transfers", label: "Transfer plan" },
+            { value: "inventory", label: "Inventory analysis" },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      </div>
       {tab === "transfers" ? (
         <div className="space-y-5 sm:space-y-6">
           <HeadlinePair

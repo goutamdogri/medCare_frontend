@@ -36,7 +36,7 @@ export function SegmentedControl<T extends string>({
               "rounded-lg font-semibold whitespace-nowrap transition-all",
               size === "sm" ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs",
               active
-                ? "bg-card text-primary shadow-sm dark:bg-white/10"
+                ? "bg-primary text-white shadow-sm dark:bg-primary dark:text-white"
                 : "text-sub hover:text-ink",
             )}
           >

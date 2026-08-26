@@ -12,7 +12,6 @@ import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { ForecastBand } from "@/features/demand-sensing/ForecastBand";
 import {
-  FactorImportanceBar,
   ModelMixDonut,
   SensingTable,
   WmapeNote,
@@ -89,7 +88,6 @@ export default function DemandSensing() {
         <div className="flex flex-col gap-5 sm:gap-6">
           <ModelMixDonut query={forecastQuery} />
           <WmapeNote runsQuery={runsQuery} metricsQuery={metricsQuery} />
-          <FactorImportanceBar query={forecastQuery} />
         </div>
       </div>
     </div>

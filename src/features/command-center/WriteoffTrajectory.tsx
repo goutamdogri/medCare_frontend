@@ -55,52 +55,54 @@ export function WriteoffTrajectory({ query, savingInr }: Props) {
         }));
 
         return (
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="gradQuo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART_COLORS.danger} stopOpacity={0.22} />
-                    <stop offset="100%" stopColor={CHART_COLORS.danger} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="gradProp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART_COLORS.success} stopOpacity={0.25} />
-                    <stop offset="100%" stopColor={CHART_COLORS.success} stopOpacity={0.03} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke={GRID_STROKE} vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  interval="preserveStartEnd"
-                  minTickGap={32}
-                  {...AXIS_PROPS}
-                />
-                <YAxis width={52} tickFormatter={(v) => formatCompact(v)} {...AXIS_PROPS} axisLine={false} />
-                <RechartsTooltip
-                  content={<ChartTooltip valueFormatter={formatInr} />}
-                  cursor={{ stroke: GRID_STROKE }}
-                />
-                <Area
-                  type="monotone"
-                  name="Status quo"
-                  dataKey="statusQuo"
-                  stroke={CHART_COLORS.danger}
-                  strokeWidth={2}
-                  fill="url(#gradQuo)"
-                />
-                <Area
-                  type="monotone"
-                  name="Proposed"
-                  dataKey="proposed"
-                  stroke={CHART_COLORS.success}
-                  strokeWidth={2.5}
-                  fill="url(#gradProp)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="flex h-80 flex-col">
+            <div className="min-h-0 flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="gradQuo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={CHART_COLORS.danger} stopOpacity={0.22} />
+                      <stop offset="100%" stopColor={CHART_COLORS.danger} stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradProp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={CHART_COLORS.success} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={CHART_COLORS.success} stopOpacity={0.03} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID_STROKE} vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={formatDate}
+                    interval="preserveStartEnd"
+                    minTickGap={32}
+                    {...AXIS_PROPS}
+                  />
+                  <YAxis width={52} tickFormatter={(v) => formatCompact(v)} {...AXIS_PROPS} axisLine={false} />
+                  <RechartsTooltip
+                    content={<ChartTooltip valueFormatter={formatInr} />}
+                    cursor={{ stroke: GRID_STROKE }}
+                  />
+                  <Area
+                    type="monotone"
+                    name="Status quo"
+                    dataKey="statusQuo"
+                    stroke={CHART_COLORS.danger}
+                    strokeWidth={2}
+                    fill="url(#gradQuo)"
+                  />
+                  <Area
+                    type="monotone"
+                    name="Proposed"
+                    dataKey="proposed"
+                    stroke={CHART_COLORS.success}
+                    strokeWidth={2.5}
+                    fill="url(#gradProp)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
             <LegendChips
-              className="mt-2 mb-1 justify-center sm:justify-start"
+              className="mt-3 justify-center sm:justify-start"
               items={[
                 { label: "Status quo write-offs", color: CHART_COLORS.danger },
                 { label: "Proposed write-offs", color: CHART_COLORS.success },

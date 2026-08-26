@@ -55,7 +55,7 @@ export function StatCard({
       className={cn(
         "animate-fade-up rounded-2xl border bg-card p-5 shadow-card transition-all duration-200",
         interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover",
-        active ? "border-primary ring-2 ring-primary/25" : "border-line",
+        active ? "border-white ring-2 ring-white/25" : "border-line",
       )}
       {...(interactive ? { role: "button", tabIndex: 0 } : {})}
       onKeyDown={
