@@ -45,7 +45,7 @@ export default function ShortageWatchlist() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-lg font-extrabold tracking-tight text-ink sm:text-xl">
-            {tab === "watchlist" ? "Shortage Watchlist" : "Escalation Board"}
+            {tab === "watchlist" ? "Stockout Watchlist" : "Escalation Board"}
           </h1>
           <p className="mt-0.5 text-xs text-sub sm:text-sm">
             {tab === "watchlist"
