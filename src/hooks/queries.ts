@@ -1,4 +1,5 @@
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -16,6 +17,7 @@ import type {
   ForecastsResponse,
   KpiResponse,
   MetaResponse,
+  ModelMetricsResponse,
   ReplenishmentResponse,
   ReplenishmentSummary,
   RunEntry,
@@ -120,6 +122,7 @@ export function useForecasts(asOf: AsOf, params: ForecastParams) {
   return useQuery({
     queryKey: ["forecasts", asOf, params.skuId, params.region, params.horizonMax ?? null],
     enabled: Boolean(asOf) && Boolean(params.skuId && params.region),
+    placeholderData: keepPreviousData,
     queryFn: ({ signal }) =>
       apiGet<ForecastsResponse>(
         "/api/forecasts",
@@ -149,6 +152,15 @@ export function useFlu(region: string, from?: string, to?: string) {
     enabled: Boolean(region),
     queryFn: ({ signal }) =>
       apiGet<FluPoint[]>("/api/flu", { region, from, to }, signal),
+  });
+}
+
+export function useModelMetrics(asOf: AsOf) {
+  return useQuery({
+    queryKey: ["model-metrics", asOf],
+    enabled: Boolean(asOf),
+    queryFn: ({ signal }) =>
+      apiGet<ModelMetricsResponse>("/api/model/metrics", { asOf }, signal),
   });
 }
 

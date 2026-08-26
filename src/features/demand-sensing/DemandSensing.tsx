@@ -5,12 +5,14 @@ import {
   useDailyCurves,
   useFlu,
   useForecasts,
+  useModelMetrics,
   useRuns,
 } from "@/hooks/queries";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { ForecastBand } from "@/features/demand-sensing/ForecastBand";
 import {
+  FactorImportanceBar,
   ModelMixDonut,
   SensingTable,
   WmapeNote,
@@ -33,6 +35,7 @@ export default function DemandSensing() {
   const fluQuery = useFlu(region, historyFrom, lastForecastDate);
   const curvesQuery = useDailyCurves(asOf);
   const runsQuery = useRuns(1);
+  const metricsQuery = useModelMetrics(asOf);
 
   const skuOptions =
     meta?.skus.map((sku) => ({
@@ -85,7 +88,8 @@ export default function DemandSensing() {
         </div>
         <div className="flex flex-col gap-5 sm:gap-6">
           <ModelMixDonut query={forecastQuery} />
-          <WmapeNote runsQuery={runsQuery} />
+          <WmapeNote runsQuery={runsQuery} metricsQuery={metricsQuery} />
+          <FactorImportanceBar query={forecastQuery} />
         </div>
       </div>
     </div>

@@ -110,17 +110,17 @@ export interface CurvePoint {
 
 export interface DailyCurvesResponse {
   asOf: string;
-  series: Record<Policy, CurvePoint[]>;
+  series: { proposed: CurvePoint[]; statusQuo: CurvePoint[] };
 }
 
 export interface CumulativePoint {
   date: string;
-  cumulativeWriteoffInr: number;
+  cumulativeExpiredValueInr: number;
 }
 
 export interface WriteoffCumulativeResponse {
   asOf: string;
-  series: Record<Policy, CumulativePoint[]>;
+  series: { proposed: CumulativePoint[]; statusQuo: CumulativePoint[] };
 }
 
 /* ---------------------------- Forecasts ------------------------------ */
@@ -267,22 +267,31 @@ export interface AgingRow {
 }
 
 /** Rolled-up-by-location shape served alongside detail rows. */
-export interface AgingLocationRollup extends Partial<Record<AgingBucket, number>> {
+export interface AgingLocationRollup {
+  location: string;
+  buckets: {
+    d0_30: { units: number; valueInr: number };
+    d31_60: { units: number; valueInr: number };
+    d61_90: { units: number; valueInr: number };
+    d90plus: { units: number; valueInr: number };
+  };
+  totalUnits: number;
   totalValueInr: number;
 }
 
-export interface AgingStatusDistribution {
-  healthy?: number;
-  watch?: number;
-  near_expiry_risk?: number;
-  stockout?: number;
+export interface AgingStatusRow {
+  status: string;
+  batches: number;
+  units: number;
+  valueInr: number;
 }
 
 export interface AgingResponse {
   asOf: string;
-  detail: AgingRow[];
-  byLocation: Record<string, AgingLocationRollup>;
-  statusDistribution: AgingStatusDistribution;
+  snapshotDate: string;
+  buckets: AgingRow[];
+  byLocation: AgingLocationRollup[];
+  statusDistribution: AgingStatusRow[];
 }
 
 /* ------------------------------- Alerts ------------------------------ */
@@ -324,4 +333,12 @@ export interface DigestResponse {
   redAlertCount: number;
   digestText: string;
   modelUsed: string | null;
+}
+
+/* ----------------------- Model evaluation metrics ------------------- */
+
+export interface ModelMetricsResponse {
+  as_of_date: string | null;
+  models: Record<string, Record<string, number | null>>;
+  by_horizon: Record<string, Record<string, Record<string, number | null>>>;
 }

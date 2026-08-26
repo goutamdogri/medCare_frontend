@@ -244,10 +244,10 @@ function AgingHeatmap({ query }: { query: ReturnType<typeof useAging> }) {
       skeleton={<SkeletonBlock lines={5} />}
     >
       {(data) => {
-        const entries = Object.entries(data.byLocation).map(([location, rollup]) => ({
-          location,
-          name: regionById.get(location)?.name ?? location,
-          cells: BUCKET_COLUMNS.map((col) => ({ ...col, value: rollup[col.key] ?? 0 })),
+        const entries = data.byLocation.map((rollup) => ({
+          location: rollup.location,
+          name: regionById.get(rollup.location)?.name ?? rollup.location,
+          cells: BUCKET_COLUMNS.map((col) => ({ ...col, value: rollup.buckets[col.key]?.valueInr ?? 0 })),
           total: rollup.totalValueInr,
         }));
         if (entries.length === 0) {

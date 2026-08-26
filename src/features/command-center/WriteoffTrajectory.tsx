@@ -44,14 +44,14 @@ export function WriteoffTrajectory({ query, savingInr }: Props) {
     >
       {(data) => {
         const proposed = data.series.proposed ?? [];
-        const statusQuo = data.series.status_quo ?? [];
+        const statusQuo = data.series.statusQuo ?? [];
         const dates = Array.from(
           new Set([...proposed.map((p) => p.date), ...statusQuo.map((s) => s.date)]),
         ).sort();
         const rows = dates.map((date) => ({
           date,
-          proposed: proposed.find((p) => p.date === date)?.cumulativeWriteoffInr ?? 0,
-          statusQuo: statusQuo.find((s) => s.date === date)?.cumulativeWriteoffInr ?? 0,
+          proposed: proposed.find((p) => p.date === date)?.cumulativeExpiredValueInr ?? 0,
+          statusQuo: statusQuo.find((s) => s.date === date)?.cumulativeExpiredValueInr ?? 0,
         }));
 
         return (
@@ -100,7 +100,7 @@ export function WriteoffTrajectory({ query, savingInr }: Props) {
               </AreaChart>
             </ResponsiveContainer>
             <LegendChips
-              className="mt-2 justify-center sm:justify-start"
+              className="mt-2 mb-1 justify-center sm:justify-start"
               items={[
                 { label: "Status quo write-offs", color: CHART_COLORS.danger },
                 { label: "Proposed write-offs", color: CHART_COLORS.success },

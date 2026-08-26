@@ -114,7 +114,11 @@ export function ForecastBand({
     >
       {(forecasts) => {
         if (!historyQuery.data || !fluQuery.data || !curvesQuery.data) {
-          return <div className="h-80 animate-pulse rounded-xl bg-line/70" />;
+          return (
+            <div className="flex h-80 items-center justify-center">
+              <div className="h-80 w-full animate-pulse rounded-xl bg-line/70" />
+            </div>
+          );
         }
         const rows = buildRows(
           historyQuery.data,
@@ -205,8 +209,8 @@ function BandChartInner({
               stackId="band"
               name="P10–P90 band"
               stroke="none"
-              fill={CHART_COLORS.secondary}
-              fillOpacity={0.18}
+              fill={CHART_COLORS.accent}
+              fillOpacity={0.16}
               legendType="none"
             />
             <Line
@@ -224,7 +228,7 @@ function BandChartInner({
               type="monotone"
               name="P50 forecast"
               dataKey="p50"
-              stroke={CHART_COLORS.primary}
+              stroke={CHART_COLORS.info}
               strokeWidth={2.5}
               dot={false}
               connectNulls={false}
@@ -247,8 +251,8 @@ function BandChartInner({
         className="mt-2 justify-center sm:justify-start"
         items={[
           { label: "Actual units", color: "var(--ink)" },
-          { label: "P50 forecast", color: CHART_COLORS.primary },
-          { label: "P10–P90 band", color: CHART_COLORS.secondary },
+          { label: "P50 forecast", color: CHART_COLORS.info },
+          { label: "P10–P90 band", color: CHART_COLORS.accent },
           { label: "Flu index (ILI)", color: CHART_COLORS.warning, dashed: true },
         ]}
       />
@@ -286,9 +290,9 @@ function BandTooltip({
       </p>
       <div className="space-y-1 text-xs">
         <Row color="var(--ink)" label="Actual" value={actual != null ? `${formatNum(Number(actual))} u` : "—"} />
-        <Row color={CHART_COLORS.primary} label="P50" value={p50 != null ? `${formatNum(Number(p50))} u` : "—"} />
+        <Row color={CHART_COLORS.info} label="P50" value={p50 != null ? `${formatNum(Number(p50))} u` : "—"} />
         <Row
-          color={CHART_COLORS.secondary}
+          color={CHART_COLORS.accent}
           label="P10–P90"
           value={Number.isFinite(low) && Number.isFinite(high) ? `${formatNum(low)} – ${formatNum(high)} u` : "—"}
         />

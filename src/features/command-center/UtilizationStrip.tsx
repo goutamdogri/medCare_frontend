@@ -42,15 +42,15 @@ export function UtilizationStrip({ query }: { query: UseQueryResult<AgingRespons
       bodyClassName="pt-4"
     >
       {(data) => {
-        const rows = Object.entries(data.byLocation)
-          .map(([location, rollup]) => {
+        const rows = data.byLocation
+          .map((rollup) => {
             const buckets = BUCKETS.map((b) => ({
               ...b,
-              value: num(rollup[b.key]),
+              value: num(rollup.buckets[b.key]?.valueInr ?? 0),
             }));
             return {
-              location,
-              name: regionById.get(location)?.name ?? location,
+              location: rollup.location,
+              name: regionById.get(rollup.location)?.name ?? rollup.location,
               total: num(rollup.totalValueInr),
               buckets,
             };

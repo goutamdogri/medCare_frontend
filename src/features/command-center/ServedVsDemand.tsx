@@ -48,15 +48,15 @@ export function ServedVsDemand({ query }: { query: UseQueryResult<DailyCurvesRes
       }
     >
       {(data) => {
-        const rows = (data.series[policy] ?? []).map((point) => ({
+        const series = policy === "proposed" ? data.series.proposed : data.series.statusQuo;
+        const rows = (series ?? []).map((point) => ({
           date: point.date,
           demand: Math.round(num(point.demand)),
           fulfilled: Math.round(num(point.fulfilled)),
         }));
-        // Policy colors are fixed across the app: proposed = primary blue,
-        // status quo = neutral gray (never a semantic alert color).
+        // Policy colors: proposed = info blue, status quo = neutral gray.
         const stroke =
-          policy === "proposed" ? CHART_COLORS.primary : "var(--sub)";
+          policy === "proposed" ? CHART_COLORS.info : "var(--sub)";
 
         return (
           <div>

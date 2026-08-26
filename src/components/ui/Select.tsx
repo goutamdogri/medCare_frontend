@@ -24,7 +24,12 @@ export function Select({ label, options, className, id, ...rest }: SelectProps) 
         <select
           id={id}
           className={cn(
-            "w-full appearance-none rounded-xl border border-line bg-card px-3.5 py-2.5 pr-9 text-sm font-medium text-ink shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/25 focus:outline-none",
+            "w-full appearance-none rounded-xl border border-line bg-card px-3.5 py-2.5 pr-10",
+            "text-sm font-medium text-ink shadow-sm",
+            "transition-all duration-150",
+            "hover:border-line/80 hover:bg-card-subtle",
+            "focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none",
+            "dark:bg-card dark:hover:bg-card-subtle",
             className,
           )}
           {...rest}
@@ -35,7 +40,9 @@ export function Select({ label, options, className, id, ...rest }: SelectProps) 
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-sub" />
+        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+          <ChevronDown className="size-4 text-sub/70" strokeWidth={2.5} />
+        </span>
       </span>
     </label>
   );
