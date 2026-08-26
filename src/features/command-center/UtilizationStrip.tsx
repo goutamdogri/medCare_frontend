@@ -28,7 +28,7 @@ export function UtilizationStrip({ query }: { query: UseQueryResult<AgingRespons
   return (
     <Widget
       title="Network inventory freshness"
-      subtitle="Stock value on hand per location by days-to-expiry bucket — metro DCs sit on soon-to-expire stock."
+      subtitle="On-hand stock value by location and expiry age."
       icon={Warehouse}
       iconClassName="bg-secondary-soft text-violet-700 dark:bg-secondary/15 dark:text-secondary"
       query={query}

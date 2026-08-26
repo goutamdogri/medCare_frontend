@@ -12,7 +12,6 @@ import {
 import { Activity as ActivityIcon } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Widget } from "@/components/ui/Widget";
-import { RawJsonToggle } from "@/components/ui/RawJsonToggle";
 import {
   AXIS_PROPS,
   CHART_COLORS,
@@ -43,8 +42,6 @@ interface Props {
   fluQuery: UseQueryResult<FluPoint[]>;
   curvesQuery: UseQueryResult<DailyCurvesResponse>;
   asOf: string;
-  windowDays: number;
-  onWindowChange: (days: number) => void;
 }
 
 function buildRows(
@@ -81,8 +78,6 @@ export function ForecastBand({
   fluQuery,
   curvesQuery,
   asOf,
-  windowDays,
-  onWindowChange,
 }: Props) {
   return (
     <Widget
@@ -91,27 +86,6 @@ export function ForecastBand({
       icon={ActivityIcon}
       iconClassName="bg-primary-soft text-indigo-700 dark:bg-primary/15 dark:text-primary"
       query={forecastQuery}
-      actions={
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs font-semibold text-sub">
-            Window
-            <input
-              type="range"
-              className="mc-slider w-32"
-              style={{ "--fill": `${((windowDays - 1) / 41) * 100}%` } as React.CSSProperties}
-              min={1}
-              max={42}
-              value={windowDays}
-              onChange={(event) => onWindowChange(Number(event.target.value))}
-              aria-label="Forecast window days"
-            />
-            <span className="rounded-lg bg-primary-soft px-2 py-0.5 font-bold text-indigo-700 tabular-nums dark:bg-primary/15 dark:text-primary">
-              {windowDays}d
-            </span>
-          </label>
-          <RawJsonToggle data={forecastQuery.data} />
-        </div>
-      }
     >
       {(forecasts) => {
         if (!historyQuery.data || !fluQuery.data || !curvesQuery.data) {

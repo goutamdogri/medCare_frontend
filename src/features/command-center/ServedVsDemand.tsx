@@ -13,7 +13,6 @@ import { Waves } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Widget } from "@/components/ui/Widget";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { RawJsonToggle } from "@/components/ui/RawJsonToggle";
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
 import {
   AXIS_PROPS,
@@ -38,15 +37,12 @@ export function ServedVsDemand({ query }: { query: UseQueryResult<DailyCurvesRes
     <Widget
       className="xl:col-span-2"
       title="Served vs demand · 42-day horizon"
-      subtitle="Daily network-wide units — how much forecast demand each policy actually fulfils."
+      subtitle="How much forecast demand each policy fulfils."
       icon={Waves}
       iconClassName="bg-primary-soft text-indigo-700 dark:bg-primary/15 dark:text-primary"
       query={query}
       actions={
-        <>
-          <SegmentedControl options={POLICY_OPTIONS} value={policy} onChange={setPolicy} />
-          <RawJsonToggle data={query.data} />
-        </>
+        <SegmentedControl options={POLICY_OPTIONS} value={policy} onChange={setPolicy} />
       }
     >
       {(data) => {
@@ -61,7 +57,7 @@ export function ServedVsDemand({ query }: { query: UseQueryResult<DailyCurvesRes
           policy === "proposed" ? CHART_COLORS.info : "var(--sub)";
 
         return (
-          <div>
+          <div className="flex flex-1 flex-col">
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={rows} margin={{ top: 10, right: 6, bottom: 0, left: 0 }}>
@@ -117,7 +113,7 @@ export function ServedVsDemand({ query }: { query: UseQueryResult<DailyCurvesRes
               </ResponsiveContainer>
             </div>
             <LegendChips
-              className="mt-3"
+              className="mt-auto pt-3"
               items={[
                 { label: `Fulfilled (${policy === "proposed" ? "proposed" : "status quo"})`, color: stroke },
                 { label: "Forecast demand", color: "var(--sub)", dashed: true },
