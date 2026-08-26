@@ -22,7 +22,6 @@ import { StatCard } from "@/components/ui/StatCard";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Table, Td, Th, Tr, SortableTh, type SortDirection } from "@/components/ui/Table";
 import { Widget } from "@/components/ui/Widget";
-import { RawJsonToggle } from "@/components/ui/RawJsonToggle";
 import { ReplenishmentDetails } from "@/components/domain/ReplenishmentDetails";
 import { ACK_USER } from "@/hooks/queries";
 import { formatInr, formatNum, numOrNull } from "@/lib/format";
@@ -194,7 +193,6 @@ function RiskGrid({
       iconClassName="bg-danger-soft text-red-700 dark:bg-danger/15 dark:text-danger"
       query={query}
       skeleton={<SkeletonBlock lines={6} />}
-      actions={<RawJsonToggle data={query.data} />}
       noPadding
       bodyClassName="px-5 pt-4 pb-2 sm:px-6"
     >

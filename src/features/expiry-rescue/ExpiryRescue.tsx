@@ -21,7 +21,6 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { StatCard } from "@/components/ui/StatCard";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import { Widget } from "@/components/ui/Widget";
-import { RawJsonToggle } from "@/components/ui/RawJsonToggle";
 import { CHART_COLORS } from "@/components/charts/chartTheme";
 import { cn } from "@/lib/cn";
 import { formatDate, formatCompact, formatInr, formatNum } from "@/lib/format";
@@ -166,19 +165,16 @@ function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
       query={query}
       skeleton={<SkeletonBlock lines={5} />}
       actions={
-        <>
-          <SegmentedControl<ReasonFilter>
-            options={[
-              { value: "all", label: "All" },
-              { value: "expiry_rescue", label: "Expiry" },
-              { value: "shortage_rescue", label: "Shortage" },
-            ]}
-            value={reason}
-            onChange={setReason}
-            size="sm"
-          />
-          <RawJsonToggle data={query.data?.summary} />
-        </>
+        <SegmentedControl<ReasonFilter>
+          options={[
+            { value: "all", label: "All" },
+            { value: "expiry_rescue", label: "Expiry" },
+            { value: "shortage_rescue", label: "Shortage" },
+          ]}
+          value={reason}
+          onChange={setReason}
+          size="sm"
+        />
       }
       noPadding
       bodyClassName="px-5 pt-4 pb-2 sm:px-6"
