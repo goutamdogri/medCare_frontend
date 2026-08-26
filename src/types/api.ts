@@ -204,13 +204,14 @@ export interface ReplenishmentSummary {
 export interface TransferLaneSummary {
   lane: string;
   count: number;
+  unitsMoved: number;
 }
 
 export interface TransfersSummary {
-  totalUnits: number;
+  totalTransfers: number;
+  totalUnitsMoved: number;
   totalValueSavedInr: number;
-  count: number;
-  byReason: Partial<Record<TransferReason, number>>;
+  countByReason: Partial<Record<TransferReason, number>>;
   byLane?: TransferLaneSummary[];
 }
 
@@ -232,7 +233,7 @@ export interface TransferRow {
 
 export interface TransfersResponse {
   asOf: string;
-  transfers: TransferRow[];
+  content: TransferRow[];
   summary: TransfersSummary;
 }
 
@@ -252,8 +253,12 @@ export interface WriteoffRow {
 
 export interface WriteoffsResponse {
   asOf: string;
-  totalResidualExposureInr: number;
-  writeoffs: WriteoffRow[];
+  content: WriteoffRow[];
+  totals: {
+    batchesAtRisk: number;
+    totalResidualUnits: number;
+    totalResidualValueInr: number;
+  };
 }
 
 /* ------------------------- Inventory aging --------------------------- */

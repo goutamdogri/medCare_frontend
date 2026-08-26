@@ -58,10 +58,10 @@ function HeadlinePair({
   writeoffsQuery: ReturnType<typeof useWriteoffs>;
 }) {
   const saved = transfersQuery.data?.summary.totalValueSavedInr;
-  const transferCount = transfersQuery.data?.summary.count ?? 0;
-  const unitsMoved = transfersQuery.data?.summary.totalUnits;
-  const residual = writeoffsQuery.data?.totalResidualExposureInr;
-  const batchCount = writeoffsQuery.data?.writeoffs.length;
+  const transferCount = transfersQuery.data?.summary.totalTransfers ?? 0;
+  const unitsMoved = transfersQuery.data?.summary.totalUnitsMoved;
+  const residual = writeoffsQuery.data?.totals.totalResidualValueInr;
+  const batchCount = writeoffsQuery.data?.totals.batchesAtRisk ?? 0;
 
   const loading =
     transfersQuery.isPending || writeoffsQuery.isPending ? (
@@ -124,7 +124,7 @@ function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
   const [reason, setReason] = useState<ReasonFilter>("all");
 
   const rows = useMemo(() => {
-    const transfers = query.data?.transfers ?? [];
+    const transfers = query.data?.content ?? [];
     return transfers
       .filter((t) => reason === "all" || t.reason === reason)
       .sort((a, b) => b.valueSavedInr - a.valueSavedInr);
@@ -244,7 +244,7 @@ function AgingHeatmap({ query }: { query: ReturnType<typeof useAging> }) {
       skeleton={<SkeletonBlock lines={5} />}
     >
       {(data) => {
-        const entries = data.byLocation.map((rollup) => ({
+        const entries = (data.byLocation ?? []).map((rollup) => ({
           location: rollup.location,
           name: regionById.get(rollup.location)?.name ?? rollup.location,
           cells: BUCKET_COLUMNS.map((col) => ({ ...col, value: rollup.buckets[col.key]?.valueInr ?? 0 })),
@@ -358,7 +358,7 @@ function ResidualRisk({ query }: { query: ReturnType<typeof useWriteoffs> }) {
     >
       {(data) => {
         void data;
-        const rows: WriteoffRow[] = [...data.writeoffs]
+        const rows: WriteoffRow[] = [...(data.content ?? [])]
           .sort((a, b) => b.residualValueInr - a.residualValueInr)
           .slice(0, 10);
         if (rows.length === 0) {

@@ -207,12 +207,14 @@ export function useReplenishmentSummary(asOf: AsOf) {
 
 /* ------------------------- transfers/writeoffs ----------------------- */
 
+const ALLOC_SIZE = 500;
+
 export function useTransfers(asOf: AsOf, reason?: TransferReason) {
   return useQuery({
     queryKey: ["transfers", asOf, reason ?? null],
     enabled: Boolean(asOf),
     queryFn: ({ signal }) =>
-      apiGet<TransfersResponse>("/api/transfers", { asOf, reason }, signal),
+      apiGet<TransfersResponse>("/api/transfers", { asOf, reason, size: ALLOC_SIZE }, signal),
   });
 }
 
@@ -221,7 +223,7 @@ export function useWriteoffs(asOf: AsOf) {
     queryKey: ["writeoffs", asOf],
     enabled: Boolean(asOf),
     queryFn: ({ signal }) =>
-      apiGet<WriteoffsResponse>("/api/writeoffs", { asOf }, signal),
+      apiGet<WriteoffsResponse>("/api/writeoffs", { asOf, size: ALLOC_SIZE }, signal),
   });
 }
 
