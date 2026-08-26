@@ -37,7 +37,7 @@ export default function ShortageWatchlist() {
   const alertsQuery = useAlerts(asOf);
 
   const [tab, setTab] = useState<Tab>("watchlist");
-  const [statusFilter, setStatusFilter] = useState<ReplenishmentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ReplenishmentStatus | "all">("stockout_risk");
   const [selected, setSelected] = useState<ReplenishmentRow | null>(null);
 
   return (
@@ -132,7 +132,7 @@ function StatusTiles({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {tiles.map((tile) => (
         <StatCard
           key={tile.status}
@@ -145,13 +145,6 @@ function StatusTiles({
           onClick={() => onSelect(active === tile.status ? "all" : tile.status)}
         />
       ))}
-      <StatCard
-        label="Total order value"
-        value={formatInr(summary.totalOrderValueInr)}
-        icon={CircleCheck}
-        accent="success"
-        sub={`${Object.values(summary.byStatus).reduce((a, b) => a + b, 0)} planned orders`}
-      />
     </div>
   );
 }
@@ -190,15 +183,13 @@ function RiskGrid({
       const bv = b.daysOfSupplyOnHand == null ? Infinity : Number(b.daysOfSupplyOnHand);
       return dosDir === "asc" ? av - bv : bv - av;
     });
-    return sorted.slice(0, 25);
+    return sorted;
   }, [query.data, statusFilter, dosDir]);
-
-  const total = query.data?.content ?? [];
 
   return (
     <Widget
       title="Shortage watchlist"
-      subtitle={`Top ${rows.length} of ${total.length} SKU×region positions — sorted by days-of-supply, critical first in drawer math.`}
+      subtitle={`${rows.length} ${statusFilter === "stockout_risk" ? "stock-out risk" : statusFilter === "low" ? "low cover" : statusFilter === "ok" ? "healthy" : "total"} SKU×region positions — sorted by days-of-supply.`}
       icon={TriangleAlert}
       iconClassName="bg-danger-soft text-red-700 dark:bg-danger/15 dark:text-danger"
       query={query}
@@ -232,10 +223,6 @@ function RiskGrid({
                     direction={dosDir}
                     onSort={() => setDosDir((d) => (d === "asc" ? "desc" : "asc"))}
                   />
-                  <Th align="right">Lead time</Th>
-                  <Th align="right">Safety stock</Th>
-                  <Th align="right">Order qty</Th>
-                  <Th align="right">Order value</Th>
                 </tr>
               </thead>
               <tbody>
@@ -254,18 +241,6 @@ function RiskGrid({
                         <CriticalityChip criticality={row.criticality} />
                       </Td>
                       <Td>{dosCell(row)}</Td>
-                      <Td align="right" className="text-xs font-semibold tabular-nums">
-                        {row.leadTimeDays} d
-                      </Td>
-                      <Td align="right" className="text-xs font-semibold tabular-nums">
-                        {formatNum(row.safetyStock)}
-                      </Td>
-                      <Td align="right" className="text-xs font-semibold tabular-nums">
-                        {formatNum(row.orderQty)}
-                      </Td>
-                      <Td align="right" className="font-bold tabular-nums">
-                        {formatInr(row.orderValueInr)}
-                      </Td>
                     </Tr>
                   );
                 })}

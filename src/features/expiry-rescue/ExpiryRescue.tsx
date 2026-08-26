@@ -135,6 +135,7 @@ function TransferLane({ row }: { row: TransferRow }) {
 }
 
 function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
+  const { skuById } = useApp();
   const [reason, setReason] = useState<ReasonFilter>("all");
 
   const rows = useMemo(() => {
@@ -200,7 +201,10 @@ function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
                 return (
                   <Tr key={`${row.id}-${row.toLocation}`}>
                     <Td className="font-mono text-xs font-medium">{row.batchId}</Td>
-                    <Td className="text-xs font-semibold">{row.skuId}</Td>
+                    <Td>
+                      <p className="text-xs font-semibold">{skuById.get(row.skuId)?.brandName ?? row.skuId}</p>
+                      <p className="text-[11px] font-medium text-sub">{row.skuId}</p>
+                    </Td>
                     <Td>
                       <TransferLane row={row} />
                       {row.carrier && (
