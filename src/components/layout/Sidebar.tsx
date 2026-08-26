@@ -14,7 +14,9 @@ function PipelineChip() {
     ? "bg-sub animate-pulse"
     : ok
       ? "bg-success"
-      : "bg-danger animate-pulse";
+      : latest
+        ? "bg-danger animate-pulse"
+        : "bg-sub";
 
   return (
     <div className="flex items-center gap-2.5 rounded-xl border border-line bg-app px-3 py-2.5">
@@ -24,12 +26,16 @@ function PipelineChip() {
       </span>
       <div className="min-w-0 leading-tight">
         <p className="text-[11px] font-bold text-ink">
-          {isLoading ? "Pipeline…" : `Run ${latest?.status ?? "unknown"}`}
+          {isLoading
+            ? "Pipeline…"
+            : latest
+              ? `Run ${latest.status}`
+              : "Pipeline idle"}
         </p>
         <p className="truncate text-[10px] font-medium text-sub tabular-nums">
           {latest
             ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
-            : "waiting for data"}
+            : "No runs recorded yet"}
         </p>
       </div>
       <Radio className="ml-auto size-3.5 shrink-0 text-sub" />

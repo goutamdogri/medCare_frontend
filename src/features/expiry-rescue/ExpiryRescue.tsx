@@ -32,18 +32,32 @@ export default function ExpiryRescue() {
   const transfersQuery = useTransfers(asOf);
   const writeoffsQuery = useWriteoffs(asOf);
   const agingQuery = useAging(asOf);
+  const [tab, setTab] = useState<"transfers" | "inventory">("transfers");
 
   return (
     <div className="animate-fade-up space-y-5 sm:space-y-6">
-      <HeadlinePair
-        transfersQuery={transfersQuery}
-        writeoffsQuery={writeoffsQuery}
+      <SegmentedControl<"transfers" | "inventory">
+        options={[
+          { value: "transfers", label: "Transfer plan" },
+          { value: "inventory", label: "Inventory analysis" },
+        ]}
+        value={tab}
+        onChange={setTab}
       />
-      <TransferTable query={transfersQuery} />
-      <div className="grid grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-2">
-        <AgingHeatmap query={agingQuery} />
-        <ResidualRisk query={writeoffsQuery} />
-      </div>
+      {tab === "transfers" ? (
+        <div className="space-y-5 sm:space-y-6">
+          <HeadlinePair
+            transfersQuery={transfersQuery}
+            writeoffsQuery={writeoffsQuery}
+          />
+          <TransferTable query={transfersQuery} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-2">
+          <AgingHeatmap query={agingQuery} />
+          <ResidualRisk query={writeoffsQuery} />
+        </div>
+      )}
     </div>
   );
 }
@@ -170,18 +184,18 @@ function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
         return (
           <Table>
             <thead>
-              <tr>
-                <Th>Batch</Th>
-                <Th>SKU</Th>
-                <Th>Lane</Th>
-                <Th align="right">Qty</Th>
-                <Th>Expires in</Th>
-                <Th>Reason</Th>
-                <Th align="right">Value saved</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.slice(0, 20).map((row) => {
+                <tr>
+                  <Th>Batch</Th>
+                  <Th>SKU</Th>
+                  <Th>Lane</Th>
+                  <Th align="right">Qty</Th>
+                  <Th>Expires in</Th>
+                  <Th>Reason</Th>
+                  <Th align="right">Value saved</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
                 const days = row.daysToExpiry;
                 return (
                   <Tr key={`${row.id}-${row.toLocation}`}>
@@ -214,8 +228,8 @@ function TransferTable({ query }: { query: ReturnType<typeof useTransfers> }) {
                   </Tr>
                 );
               })}
-            </tbody>
-          </Table>
+              </tbody>
+            </Table>
         );
       }}
     </Widget>
