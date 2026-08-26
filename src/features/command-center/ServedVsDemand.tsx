@@ -19,6 +19,8 @@ import {
   AXIS_PROPS,
   CHART_COLORS,
   GRID_STROKE,
+  GRID_OPACITY,
+  GRADIENT_STOPS,
 } from "@/components/charts/chartTheme";
 import { LegendChips } from "@/components/charts/LegendChips";
 import { formatCompact, formatDate, formatNum, num } from "@/lib/format";
@@ -62,41 +64,53 @@ export function ServedVsDemand({ query }: { query: UseQueryResult<DailyCurvesRes
           <div>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={rows} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
-                  <CartesianGrid stroke={GRID_STROKE} vertical={false} />
+                <ComposedChart data={rows} margin={{ top: 10, right: 6, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id={`fill-fulfilled-${policy}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={policy === "proposed" ? GRADIENT_STOPS.info.stop1 : GRADIENT_STOPS.sub.stop1} stopOpacity={1} />
+                      <stop offset="100%" stopColor={policy === "proposed" ? GRADIENT_STOPS.info.stop2 : GRADIENT_STOPS.sub.stop2} stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke={GRID_STROKE} strokeOpacity={GRID_OPACITY} vertical={false} strokeDasharray="3 6" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={formatDate}
                     interval="preserveStartEnd"
                     minTickGap={28}
                     {...AXIS_PROPS}
+                    tickMargin={8}
                   />
-                  <YAxis width={46} tickFormatter={formatCompact} {...AXIS_PROPS} axisLine={false} />
+                  <YAxis
+                    width={44}
+                    tickFormatter={formatCompact}
+                    {...AXIS_PROPS}
+                    tickMargin={4}
+                  />
                   <Tooltip
                     content={
                       <ChartTooltip
                         valueFormatter={(v) => `${formatNum(v)} u`}
                       />
                     }
-                    cursor={{ stroke: GRID_STROKE }}
+                    cursor={{ stroke: GRID_STROKE, strokeOpacity: 0.7, strokeWidth: 1 }}
                   />
                   <Area
-                    type="monotone"
-                    name="Fulfilled"
+                    type="monotoneX"
+                    name={`Fulfilled (${policy === "proposed" ? "proposed" : "status quo"})`}
                     dataKey="fulfilled"
                     stroke={stroke}
-                    strokeWidth={2.5}
-                    fill={stroke}
-                    fillOpacity={0.16}
-                    activeDot={{ r: 4, strokeWidth: 0 }}
+                    strokeWidth={2}
+                    fill={`url(#fill-fulfilled-${policy})`}
+                    activeDot={{ r: 4, strokeWidth: 0, fill: stroke }}
                   />
                   <Line
-                    type="monotone"
-                    name="Demand"
+                    type="monotoneX"
+                    name="Forecast demand"
                     dataKey="demand"
                     stroke="var(--sub)"
-                    strokeWidth={2}
-                    strokeDasharray="6 4"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    strokeOpacity={0.7}
                     dot={false}
                   />
                 </ComposedChart>

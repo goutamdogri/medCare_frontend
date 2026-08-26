@@ -8,20 +8,21 @@ interface LegendChipsProps {
 /** Inline legend chips for chart cards. */
 export function LegendChips({ items, className }: LegendChipsProps) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1.5", className)}>
+    <div className={cn("flex flex-wrap items-center gap-x-5 gap-y-2", className)}>
       {items.map((item) => (
         <span
           key={item.label}
-          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sub"
+          className="inline-flex items-center gap-2 text-[11px] font-medium text-sub"
         >
           <span
             aria-hidden
-            className="h-0.5 w-4 rounded-full"
+            className="h-[2px] w-5 shrink-0 rounded-full"
             style={{
               backgroundColor: item.dashed ? "transparent" : item.color,
               backgroundImage: item.dashed
-                ? `repeating-linear-gradient(90deg, ${item.color} 0 4px, transparent 4px 7px)`
+                ? `repeating-linear-gradient(90deg, ${item.color} 0 5px, transparent 5px 9px)`
                 : undefined,
+              opacity: item.dashed ? 0.75 : 1,
             }}
           />
           {item.label}

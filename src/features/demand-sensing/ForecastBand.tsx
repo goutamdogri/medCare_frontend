@@ -17,6 +17,7 @@ import {
   AXIS_PROPS,
   CHART_COLORS,
   GRID_STROKE,
+  GRID_OPACITY,
 } from "@/components/charts/chartTheme";
 import { LegendChips } from "@/components/charts/LegendChips";
 import { formatCompact, formatDate, formatNum } from "@/lib/format";
@@ -151,40 +152,53 @@ function BandChartInner({
     <div>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
-            <CartesianGrid stroke={GRID_STROKE} vertical={false} />
+          <ComposedChart data={rows} margin={{ top: 10, right: 42, bottom: 0, left: 0 }}>
+            {/*
+              3-stop gradient: full opacity at y=0 (P90 top edge) and y=1 (P10 bottom edge),
+              fading to near-transparent at y=0.5 (midpoint). objectBoundingBox (default)
+              maps the gradient to the band shape's own bounding box, not the full chart.
+            */}
+            <defs>
+              <linearGradient id="grad-band-tube" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor={CHART_COLORS.info} stopOpacity={0.55} />
+                <stop offset="50%"  stopColor={CHART_COLORS.info} stopOpacity={0.08} />
+                <stop offset="100%" stopColor={CHART_COLORS.info} stopOpacity={0.55} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={GRID_STROKE} strokeOpacity={GRID_OPACITY} vertical={false} strokeDasharray="3 6" />
             <XAxis
               dataKey="date"
               tickFormatter={formatDate}
               interval="preserveStartEnd"
               minTickGap={30}
               {...AXIS_PROPS}
+              tickMargin={8}
             />
             <YAxis
               yAxisId="units"
-              width={46}
+              width={44}
               tickFormatter={formatCompact}
               {...AXIS_PROPS}
-              axisLine={false}
+              tickMargin={4}
             />
             <YAxis
               yAxisId="flu"
               orientation="right"
-              width={38}
+              width={36}
               domain={[0, (max: number) => Math.ceil(max * 1.15)]}
               {...AXIS_PROPS}
-              tick={{ fill: CHART_COLORS.warning, fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
+              tick={{ fill: CHART_COLORS.warning, fontSize: 10.5 }}
+              tickMargin={4}
             />
             <RechartsTooltip
-              cursor={{ stroke: GRID_STROKE }}
+              cursor={{ stroke: GRID_STROKE, strokeOpacity: 0.7, strokeWidth: 1 }}
               content={<BandTooltip />}
             />
             <ReferenceLine
               yAxisId="units"
               x={curvesQuery.data?.series.proposed?.[0]?.date ?? asOf}
               stroke="var(--sub)"
+              strokeOpacity={0.5}
               strokeDasharray="4 4"
               label={{
                 value: "as of",
@@ -193,6 +207,7 @@ function BandChartInner({
                 fill: "var(--sub)",
               }}
             />
+            {/* Invisible spacer: lifts the band fill to P10 — no fill, no stroke */}
             <Area
               yAxisId="units"
               dataKey="bandLow"
@@ -202,45 +217,50 @@ function BandChartInner({
               fill="none"
               legendType="none"
               tooltipType="none"
+              dot={false}
+              connectNulls
             />
+            {/* Band fill P10→P90: tube gradient — full color at both edges, faded in middle */}
             <Area
               yAxisId="units"
               dataKey="bandSpan"
               stackId="band"
               name="P10–P90 band"
               stroke="none"
-              fill={CHART_COLORS.accent}
-              fillOpacity={0.16}
+              fill="url(#grad-band-tube)"
               legendType="none"
+              dot={false}
+              connectNulls
             />
             <Line
               yAxisId="units"
-              type="monotone"
+              type="monotoneX"
               name="Actual units"
               dataKey="actual"
               stroke="var(--ink)"
-              strokeWidth={2.5}
+              strokeWidth={2}
               dot={false}
               connectNulls={false}
             />
             <Line
               yAxisId="units"
-              type="monotone"
+              type="monotoneX"
               name="P50 forecast"
               dataKey="p50"
               stroke={CHART_COLORS.info}
-              strokeWidth={2.5}
+              strokeWidth={2}
               dot={false}
               connectNulls={false}
             />
             <Line
               yAxisId="flu"
-              type="monotone"
-              name="Flu index"
+              type="monotoneX"
+              name="Flu index (ILI)"
               dataKey="flu"
               stroke={CHART_COLORS.warning}
-              strokeWidth={1.75}
-              strokeDasharray="7 5"
+              strokeWidth={1.5}
+              strokeDasharray="6 5"
+              strokeOpacity={0.8}
               dot={false}
               connectNulls
             />
@@ -252,7 +272,7 @@ function BandChartInner({
         items={[
           { label: "Actual units", color: "var(--ink)" },
           { label: "P50 forecast", color: CHART_COLORS.info },
-          { label: "P10–P90 band", color: CHART_COLORS.accent },
+          { label: "P10–P90 band", color: CHART_COLORS.info },
           { label: "Flu index (ILI)", color: CHART_COLORS.warning, dashed: true },
         ]}
       />
@@ -284,17 +304,20 @@ function BandTooltip({
   const flu = get("flu");
 
   return (
-    <div className="rounded-xl border border-line bg-card px-3.5 py-2.5 shadow-pop">
-      <p className="mb-1.5 text-[11px] font-bold tracking-wide text-sub uppercase">
+    <div
+      className="rounded-xl border border-line/60 bg-card/90 px-3.5 py-2.5 shadow-pop backdrop-blur-md"
+      style={{ minWidth: 164 }}
+    >
+      <p className="mb-2 text-[10px] font-semibold tracking-widest text-sub uppercase">
         {typeof label === "string" ? formatDate(label) : label}
       </p>
-      <div className="space-y-1 text-xs">
+      <div className="space-y-1.5 text-xs">
         <Row color="var(--ink)" label="Actual" value={actual != null ? `${formatNum(Number(actual))} u` : "—"} />
         <Row color={CHART_COLORS.info} label="P50" value={p50 != null ? `${formatNum(Number(p50))} u` : "—"} />
         <Row
           color={CHART_COLORS.accent}
           label="P10–P90"
-          value={Number.isFinite(low) && Number.isFinite(high) ? `${formatNum(low)} – ${formatNum(high)} u` : "—"}
+          value={Number.isFinite(low) && Number.isFinite(high) ? `${formatNum(low)}–${formatNum(high)} u` : "—"}
         />
         {flu != null && (
           <Row color={CHART_COLORS.warning} label="Flu index" value={String(Math.round(Number(flu) * 100) / 100)} />
@@ -307,9 +330,13 @@ function BandTooltip({
 function Row({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2">
-      <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: color }} />
+      <span
+        aria-hidden
+        className="size-[7px] shrink-0 rounded-full ring-[1.5px] ring-white/20"
+        style={{ backgroundColor: color }}
+      />
       <span className="text-sub">{label}</span>
-      <span className="ml-auto pl-4 font-bold text-ink tabular-nums">{value}</span>
+      <span className="ml-auto pl-4 font-semibold text-ink tabular-nums">{value}</span>
     </div>
   );
 }
