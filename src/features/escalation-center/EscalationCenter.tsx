@@ -13,8 +13,6 @@ import { useApp } from "@/context/app-context";
 import { useAlerts, useDigest } from "@/hooks/queries";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { SkeletonBlock } from "@/components/ui/Skeleton";
-import { StatCard } from "@/components/ui/StatCard";
 import { cn } from "@/lib/cn";
 
 /** Page 6 — review cadence and the AI escalation brief. */
@@ -34,32 +32,36 @@ export default function EscalationCenter() {
     <div className="animate-fade-up space-y-5 sm:space-y-6">
       <ModeBanner loading={digestQuery.isPending} surgeMode={surgeMode} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Red alerts open"
+      {/* 60:30:10 — metrics row: dominant neutral, secondary warning, accent red */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricRow
+          icon={Flame}
+          label="Red alerts"
           value={redOpen}
           accent="danger"
-          icon={Flame}
-          sub={digest ? `digest reports ${digest.redAlertCount} for this run` : undefined}
+          sub={digest ? `digest reports ${digest.redAlertCount}` : undefined}
+          loading={digestQuery.isPending || alertsQuery.isPending}
         />
-        <StatCard
-          label="Amber alerts open"
+        <MetricRow
+          icon={TriangleAlert}
+          label="Amber alerts"
           value={amberOpen}
           accent="warning"
-          icon={TriangleAlert}
           sub="awaiting acknowledgement"
+          loading={digestQuery.isPending || alertsQuery.isPending}
         />
-        <SurgeRegionsCard query={digestQuery} />
-        <StatCard
+        <SurgeRegionsRow query={digestQuery} />
+        <MetricRow
+          icon={Clock}
           label="Review cadence"
           value={surgeMode ? "Daily" : "Weekly"}
           accent={surgeMode ? "danger" : "info"}
-          icon={Clock}
           sub={
             surgeMode
-              ? "until region leaves top-quartile ILI for 14 straight days"
+              ? "until region leaves top-quartile ILI for 14 days"
               : "Monday morning supply review"
           }
+          loading={digestQuery.isPending}
         />
       </div>
 
@@ -123,35 +125,101 @@ function ModeBanner({
   );
 }
 
-/* --------------------------- Surge region chips ------------------------ */
+/* --------------------------- Compact metric row ------------------------ */
 
-function SurgeRegionsCard({ query }: { query: ReturnType<typeof useDigest> }) {
-  const regions = query.data?.surgeRegions ?? [];
+function MetricRow({
+  icon: Icon,
+  label,
+  value,
+  accent,
+  sub,
+  loading,
+}: {
+  icon: typeof Flame;
+  label: string;
+  value: string | number;
+  accent: "danger" | "warning" | "info" | "success";
+  sub?: string;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return <div className="h-20 animate-pulse rounded-xl bg-line/60" />;
+  }
+
+  const accentBg: Record<string, string> = {
+    danger: "bg-danger/[.06] border-danger/20",
+    warning: "bg-warning/[.06] border-warning/20",
+    info: "bg-info/[.06] border-info/20",
+    success: "bg-success/[.06] border-success/20",
+  };
+  const accentText: Record<string, string> = {
+    danger: "text-danger",
+    warning: "text-warning",
+    info: "text-info",
+    success: "text-success",
+  };
+  const accentIcon: Record<string, string> = {
+    danger: "text-danger",
+    warning: "text-warning",
+    info: "text-info",
+    success: "text-success",
+  };
+
   return (
-    <Card className="animate-fade-up p-5 shadow-card">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold tracking-wider text-sub uppercase">
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors",
+        accentBg[accent],
+      )}
+    >
+      <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", accentIcon[accent])}>
+        <Icon className="size-[18px]" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold tracking-wide text-sub uppercase">{label}</p>
+        <p className={cn("text-lg font-extrabold tabular-nums leading-tight", accentText[accent])}>
+          {value}
+        </p>
+        {sub && <p className="mt-0.5 text-[11px] leading-snug text-sub truncate">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- Surge region row ------------------------ */
+
+function SurgeRegionsRow({ query }: { query: ReturnType<typeof useDigest> }) {
+  const regions = query.data?.surgeRegions ?? [];
+
+  if (query.isPending) {
+    return <div className="h-20 animate-pulse rounded-xl bg-line/60" />;
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-line bg-app px-4 py-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg text-sub">
+        <MapPin className="size-[18px]" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold tracking-wide text-sub uppercase">
           Regions in surge
         </p>
-        <MapPin className="size-4 text-sub" />
+        {regions.length === 0 ? (
+          <>
+            <p className="text-lg font-extrabold text-success leading-tight">None</p>
+            <p className="mt-0.5 text-[11px] text-sub">No region exceeds thresholds</p>
+          </>
+        ) : (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {regions.map((region) => (
+              <Badge key={region} variant="danger" dot className="text-[10px]">
+                {region.replaceAll("DC_", "").replaceAll("WH_", "")}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
-      {query.isPending ? (
-        <SkeletonBlock lines={1} className="px-0 pt-3 pb-0" />
-      ) : regions.length === 0 ? (
-        <>
-          <p className="mt-2 text-sm font-bold text-success">None</p>
-          <p className="mt-0.5 text-xs text-sub">No region currently exceeds surge thresholds.</p>
-        </>
-      ) : (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {regions.map((region) => (
-            <Badge key={region} variant="danger" dot>
-              {region.replaceAll("DC_", "").replaceAll("WH_", "")}
-            </Badge>
-          ))}
-        </div>
-      )}
-    </Card>
+    </div>
   );
 }
 
@@ -210,20 +278,34 @@ const RULES = [
     icon: Siren,
     title: "Surge mode",
     body: "Daily review while any region stays in the top ILI quartile — exits only after 14 consecutive below-quartile days.",
+    accent: "danger" as const,
   },
   {
     icon: CalendarCheck,
     title: "Standard mode",
     body: "Weekly Monday morning supply review with the full order book and write-off outlook.",
+    accent: "info" as const,
   },
   {
     icon: Gavel,
     title: "Always-on escalation",
     body: "Any new RED alert reaches the CSCO within 24 hours, regardless of the standing cadence.",
+    accent: "warning" as const,
   },
 ];
 
 function CadenceExplainer() {
+  const accentBorder: Record<string, string> = {
+    danger: "border-l-danger",
+    info: "border-l-info",
+    warning: "border-l-warning",
+  };
+  const accentText: Record<string, string> = {
+    danger: "text-danger",
+    info: "text-info",
+    warning: "text-warning",
+  };
+
   return (
     <Card>
       <CardHeader
@@ -232,20 +314,22 @@ function CadenceExplainer() {
         icon={Clock}
         iconClassName="bg-warning-soft text-yellow-800 dark:bg-warning/15 dark:text-warning"
       />
-      <ol className="space-y-4 px-5 pt-4 pb-5 sm:px-6">
+      <ol className="space-y-0 px-5 pt-4 pb-5 sm:px-6">
         {RULES.map((rule, index) => {
           const Icon = rule.icon;
           return (
-            <li key={rule.title} className="relative flex gap-3 pl-2">
-              <div className="flex flex-col items-center">
-                <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-app text-sub">
-                  <Icon className="size-4" />
-                </span>
-                {index < RULES.length - 1 && (
-                  <span className="mt-1 w-px flex-1 bg-line" aria-hidden />
-                )}
-              </div>
-              <div className="pb-1">
+            <li
+              key={rule.title}
+              className={cn(
+                "relative flex gap-3 border-l-2 py-3 pl-4",
+                accentBorder[rule.accent],
+                index < RULES.length - 1 && "border-b border-line/50",
+              )}
+            >
+              <span className={cn("mt-0.5 shrink-0", accentText[rule.accent])}>
+                <Icon className="size-4" />
+              </span>
+              <div>
                 <p className="text-sm font-bold text-ink">{rule.title}</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-sub">{rule.body}</p>
               </div>

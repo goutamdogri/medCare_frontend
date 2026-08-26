@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
 interface DrawerProps {
@@ -37,7 +38,7 @@ export function Drawer({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
       <button
         type="button"
@@ -68,6 +69,7 @@ export function Drawer({
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && <div className="border-t border-line px-6 py-4">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

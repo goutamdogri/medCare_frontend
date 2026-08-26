@@ -19,13 +19,15 @@ import { Drawer } from "@/components/ui/Drawer";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
 import { StatCard } from "@/components/ui/StatCard";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Table, Td, Th, Tr, SortableTh, type SortDirection } from "@/components/ui/Table";
 import { Widget } from "@/components/ui/Widget";
 import { RawJsonToggle } from "@/components/ui/RawJsonToggle";
 import { ReplenishmentDetails } from "@/components/domain/ReplenishmentDetails";
 import { ACK_USER } from "@/hooks/queries";
-import { cn } from "@/lib/cn";
 import { formatInr, formatNum, numOrNull } from "@/lib/format";
+
+type Tab = "watchlist" | "escalation";
 
 /** Page 3 — fewer stock-outs of critical SKUs + live ack workflow. */
 export default function ShortageWatchlist() {
@@ -34,30 +36,54 @@ export default function ShortageWatchlist() {
   const summaryQuery = useReplenishmentSummary(asOf);
   const alertsQuery = useAlerts(asOf);
 
+  const [tab, setTab] = useState<Tab>("watchlist");
   const [statusFilter, setStatusFilter] = useState<ReplenishmentStatus | "all">("all");
   const [selected, setSelected] = useState<ReplenishmentRow | null>(null);
 
   return (
     <div className="animate-fade-up space-y-5 sm:space-y-6">
-      <StatusTiles
-        summaryQuery={summaryQuery}
-        active={statusFilter}
-        onSelect={setStatusFilter}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-extrabold tracking-tight text-ink sm:text-xl">
+            {tab === "watchlist" ? "Shortage Watchlist" : "Escalation Board"}
+          </h1>
+          <p className="mt-0.5 text-xs text-sub sm:text-sm">
+            {tab === "watchlist"
+              ? "Monitor SKU-level stock positions and plan replenishment orders."
+              : "Machine-generated shortage & expiry alerts awaiting review."}
+          </p>
+        </div>
+        <SegmentedControl
+          options={[
+            { value: "watchlist" as Tab, label: "Watchlist" },
+            { value: "escalation" as Tab, label: "Escalation Board" },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
+      </div>
 
-      <RiskGrid
-        query={replQuery}
-        statusFilter={statusFilter}
-        onRowSelect={setSelected}
-      />
-
-      <AlertBoard alertsQuery={alertsQuery} />
-
-      <RiskDrawer
-        row={selected}
-        onClose={() => setSelected(null)}
-        alerts={alertsQuery.data?.content ?? []}
-      />
+      {tab === "watchlist" ? (
+        <>
+          <StatusTiles
+            summaryQuery={summaryQuery}
+            active={statusFilter}
+            onSelect={setStatusFilter}
+          />
+          <RiskGrid
+            query={replQuery}
+            statusFilter={statusFilter}
+            onRowSelect={setSelected}
+          />
+          <RiskDrawer
+            row={selected}
+            onClose={() => setSelected(null)}
+            alerts={alertsQuery.data?.content ?? []}
+          />
+        </>
+      ) : (
+        <AlertBoard alertsQuery={alertsQuery} />
+      )}
     </div>
   );
 }
@@ -353,7 +379,7 @@ function AlertBoard({
       {(data) => {
         void data;
         return (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {unacked.length === 0 ? (
               <EmptyState
                 icon={CircleCheck}
@@ -361,84 +387,90 @@ function AlertBoard({
                 message="No unacknowledged alerts for this snapshot."
               />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-3">
                 {unacked.map((alert) => {
                   const facts = alert.facts ?? {};
                   const brand = skuById.get(alert.skuId)?.brandName;
+                  const isRed = alert.severity === "RED";
                   return (
-                    <article
+                    <div
                       key={alert.id}
-                      className={cn(
-                        "animate-fade-up flex flex-col gap-3 rounded-2xl border p-4",
-                        alert.severity === "RED"
-                          ? "border-danger/35 bg-danger/[.04]"
-                          : "border-warning/40 bg-warning/[.05]",
-                      )}
+                      className="animate-fade-up overflow-hidden rounded-xl border border-line transition-colors hover:bg-card-subtle"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-bold text-ink">
+                      {/* Row 1 — info bar */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+                        {/* Severity stripe */}
+                        <span
+                          className={`h-8 w-1 shrink-0 rounded-full ${isRed ? "bg-danger" : "bg-warning"}`}
+                        />
+
+                        {/* Identity */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-ink">
                             {brand ?? alert.skuId}
                             <span className="ml-1.5 font-mono text-[11px] font-medium text-sub">
                               @{regionById.get(alert.region)?.name ?? alert.region}
                             </span>
                           </p>
-                          <p className="mt-0.5 text-[11px] font-medium text-sub capitalize">
+                          <p className="mt-0.5 text-[11px] capitalize text-sub">
                             {alert.type.replaceAll("_", " ")} · #{alert.id}
                           </p>
                         </div>
-                        <SeverityBadge severity={alert.severity} />
+
+                        {/* Fact badges */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {facts.criticality && (
+                            <CriticalityChip criticality={facts.criticality} />
+                          )}
+                          {facts.days_of_supply != null && (
+                            <Badge variant="gray" className="tabular-nums">
+                              DOS {Number(facts.days_of_supply).toFixed(1)}d
+                            </Badge>
+                          )}
+                          {facts.lead_time_days != null && (
+                            <Badge variant="gray" className="tabular-nums">
+                              LT {facts.lead_time_days}d
+                            </Badge>
+                          )}
+                          {facts.recommended_order_units != null && (
+                            <Badge variant="info" className="tabular-nums">
+                              order {formatNum(Number(facts.recommended_order_units))} u
+                            </Badge>
+                          )}
+                          {facts.order_value_inr != null && (
+                            <Badge variant="success" className="tabular-nums">
+                              {formatInr(Number(facts.order_value_inr))}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Severity + Ack */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant={isRed ? "primary" : "outline"}
+                            loading={acknowledge.isPending && acknowledge.variables === alert.id}
+                            onClick={() => handleAck(alert)}
+                          >
+                            Acknowledge
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5">
-                        {facts.criticality && (
-                          <CriticalityChip criticality={facts.criticality} />
-                        )}
-                        {facts.days_of_supply != null && (
-                          <Badge variant="gray" className="tabular-nums">
-                            DOS {Number(facts.days_of_supply).toFixed(1)}d
-                          </Badge>
-                        )}
-                        {facts.lead_time_days != null && (
-                          <Badge variant="gray" className="tabular-nums">
-                            LT {facts.lead_time_days}d
-                          </Badge>
-                        )}
-                        {facts.recommended_order_units != null && (
-                          <Badge variant="info" className="tabular-nums">
-                            order {formatNum(Number(facts.recommended_order_units))} u
-                          </Badge>
-                        )}
-                        {facts.order_value_inr != null && (
-                          <Badge variant="success" className="tabular-nums">
-                            {formatInr(Number(facts.order_value_inr))}
-                          </Badge>
-                        )}
-                      </div>
-
+                      {/* Row 2 — action message (only if present) */}
                       {alert.action && (
-                        <p className="rounded-lg bg-app px-3 py-2 text-xs leading-relaxed text-sub">
+                        <div className="border-t border-line px-4 py-2.5 text-xs leading-relaxed text-sub">
                           {alert.action}
-                        </p>
+                        </div>
                       )}
-
-                      <Button
-                        size="sm"
-                        variant={alert.severity === "RED" ? "primary" : "outline"}
-                        loading={acknowledge.isPending && acknowledge.variables === alert.id}
-                        onClick={() => handleAck(alert)}
-                        className="mt-auto self-stretch sm:self-auto"
-                      >
-                        Acknowledge
-                      </Button>
-                    </article>
+                    </div>
                   );
                 })}
               </div>
             )}
 
             {acked.length > 0 && (
-              <details className="group rounded-2xl border border-line bg-app/50 px-4 py-3">
+              <details className="group rounded-xl border border-line bg-app/50 px-4 py-3">
                 <summary className="cursor-pointer list-none text-xs font-bold tracking-wide text-sub uppercase transition-colors hover:text-ink">
                   ✓ Acknowledged ({acked.length})
                 </summary>
