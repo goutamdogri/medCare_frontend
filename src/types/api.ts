@@ -6,6 +6,27 @@
 
 export type NumLike = number | string | null | undefined;
 
+/* --------------------------- Authentication -------------------------- */
+
+export type UserRole = "admin" | "viewer" | "analyst";
+
+export interface CurrentUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: CurrentUser;
+}
+
+export interface MeResponse {
+  user: CurrentUser;
+}
+
 export type Criticality = "critical" | "high" | "standard" | "low";
 export type ReplenishmentStatus = "ok" | "low" | "stockout_risk";
 export type Severity = "RED" | "AMBER";

@@ -1,5 +1,7 @@
 const BASE = import.meta.env.VITE_API_BASE ?? "";
 
+import { getAccessToken } from "@/api/auth-token";
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -29,11 +31,21 @@ export function buildUrl(
 
 async function parseError(response: Response): Promise<ApiError> {
   try {
-    const body = (await response.json()) as { error?: string };
-    return new ApiError(response.status, body.error ?? response.statusText);
+    const body = (await response.json()) as { error?: string; message?: string };
+    return new ApiError(response.status, body.message ?? body.error ?? response.statusText);
   } catch {
     return new ApiError(response.status, response.statusText);
   }
+}
+
+/** JSON body helpers that optionally attach the Bearer session token. */
+function headers(withAuth: boolean, extra?: Record<string, string>): Record<string, string> {
+  const h: Record<string, string> = { "Content-Type": "application/json", ...extra };
+  if (withAuth) {
+    const token = getAccessToken();
+    if (token) h.Authorization = `Bearer ${token}`;
+  }
+  return h;
 }
 
 export async function apiGet<T>(
@@ -41,7 +53,24 @@ export async function apiGet<T>(
   params?: Record<string, QueryParam>,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch(buildUrl(path, params), { signal });
+  const response = await fetch(buildUrl(path, params), {
+    signal,
+    headers: headers(true),
+  });
+  if (!response.ok) throw await parseError(response);
+  return (await response.json()) as T;
+}
+
+export async function apiPost<T>(
+  path: string,
+  body: unknown,
+  options?: { auth?: boolean },
+): Promise<T> {
+  const response = await fetch(BASE + path, {
+    method: "POST",
+    headers: headers(options?.auth ?? true),
+    body: JSON.stringify(body),
+  });
   if (!response.ok) throw await parseError(response);
   return (await response.json()) as T;
 }
@@ -49,8 +78,17 @@ export async function apiGet<T>(
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(BASE + path, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: headers(true),
     body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await parseError(response);
+  return (await response.json()) as T;
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const response = await fetch(BASE + path, {
+    method: "DELETE",
+    headers: headers(true),
   });
   if (!response.ok) throw await parseError(response);
   return (await response.json()) as T;

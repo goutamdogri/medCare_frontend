@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/api/client";
+import { useAuth } from "@/context/auth-context";
 import {
   AppContext,
   type AppContextValue,
@@ -18,10 +19,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Explicit date picked by the user; falls back to latest run when unset.
   const [asOfOverride, setAsOfOverride] = useState<string | undefined>(undefined);
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  const { status } = useAuth();
 
+  // The meta payload is only fetched once a session exists; /api/meta is
+  // bearer-protected, so skip it on the (unauthenticated) login screen.
   const metaQuery = useQuery({
     queryKey: ["meta"],
     queryFn: ({ signal }) => apiGet<MetaResponse>("/api/meta", undefined, signal),
+    enabled: status === "authenticated",
     staleTime: 10 * 60_000,
   });
 
