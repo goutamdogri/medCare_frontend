@@ -9,6 +9,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import gsap from "gsap";
+import { useLayoutEffect, useRef } from "react";
 import { Activity as ActivityIcon } from "lucide-react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Widget } from "@/components/ui/Widget";
@@ -97,7 +99,7 @@ export function ForecastBand({
         }
         const rows = buildRows(
           historyQuery.data,
-          forecasts.content,
+          forecasts.content.filter((forecast) => forecast.horizon <= windowDays),
           fluQuery.data,
         );
 
@@ -106,6 +108,7 @@ export function ForecastBand({
             rows={rows}
             curvesQuery={curvesQuery}
             asOf={asOf}
+            windowDays={windowDays}
           />
         );
       }}
@@ -117,13 +120,29 @@ function BandChartInner({
   rows,
   curvesQuery,
   asOf,
+  windowDays,
 }: {
   rows: BandRow[];
   curvesQuery: UseQueryResult<DailyCurvesResponse>;
   asOf: string;
+  windowDays: number;
 }) {
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!chartRef.current) return;
+
+    const animation = gsap.fromTo(
+      chartRef.current,
+      { opacity: 0.35, y: 8 },
+      { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+    );
+
+    return () => animation.kill();
+  }, [rows, windowDays]);
+
   return (
-    <div>
+    <div ref={chartRef}>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={rows} margin={{ top: 10, right: 42, bottom: 0, left: 0 }}>
