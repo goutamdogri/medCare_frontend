@@ -53,10 +53,11 @@ export function StatCard({
     <div
       onClick={onClick}
       className={cn(
-        "animate-fade-up rounded-2xl border bg-card p-5 shadow-card transition-all duration-200",
-        interactive && "cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover",
-        active ? "border-white ring-2 ring-white/25" : "border-line",
-      )}
+  "animate-fade-up h-full min-h-[160px] rounded-2xl border bg-card p-5 shadow-card transition-all duration-200",
+  interactive &&
+    "cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover",
+  active ? "border-white ring-2 ring-white/25" : "border-line",
+)}
       {...(interactive ? { role: "button", tabIndex: 0 } : {})}
       onKeyDown={
         interactive

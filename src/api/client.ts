@@ -1,4 +1,7 @@
+import { mockAcknowledge, mockGet } from "@/api/mockData";
+
 const BASE = import.meta.env.VITE_API_BASE ?? "";
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API !== "false";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -41,12 +44,23 @@ export async function apiGet<T>(
   params?: Record<string, QueryParam>,
   signal?: AbortSignal,
 ): Promise<T> {
+  if (USE_MOCK_API) {
+    if (signal?.aborted) throw new DOMException("The request was aborted", "AbortError");
+    return mockGet(path, params) as T;
+  }
   const response = await fetch(buildUrl(path, params), { signal });
   if (!response.ok) throw await parseError(response);
   return (await response.json()) as T;
 }
 
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  if (USE_MOCK_API && path.startsWith("/api/alerts/") && path.endsWith("/acknowledge")) {
+    const id = Number(path.split("/")[3]);
+    const user = typeof body === "object" && body !== null && "user" in body
+      ? String((body as { user: unknown }).user)
+      : "mock-user";
+    return mockAcknowledge(id, user) as T;
+  }
   const response = await fetch(BASE + path, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
