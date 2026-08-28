@@ -63,16 +63,20 @@ const DAY_MONTH_YEAR = new Intl.DateTimeFormat("en-In", {
 
 /** "17 Jan" — axis labels. Safe for ISO yyyy-MM-dd strings. */
 export function formatDate(iso: string): string {
-  return DAY_MONTH.format(new Date(`${iso.slice(0, 10)}T00:00:00`));
+  const d = iso ? new Date(`${iso.slice(0, 10)}T00:00:00`) : new Date(NaN);
+  return Number.isNaN(d.getTime()) ? "" : DAY_MONTH.format(d);
 }
 
 /** "17 Jan 2019" — tooltips and headers. */
 export function formatDateLong(iso: string): string {
-  return DAY_MONTH_YEAR.format(new Date(`${iso.slice(0, 10)}T00:00:00`));
+  const d = iso ? new Date(`${iso.slice(0, 10)}T00:00:00`) : new Date(NaN);
+  return Number.isNaN(d.getTime()) ? "" : DAY_MONTH_YEAR.format(d);
 }
 
 export function isoDaysAgo(days: number, anchorIso: string): string {
+  if (!anchorIso) return "";
   const d = new Date(`${anchorIso.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
   d.setDate(d.getDate() - days);
   return d.toISOString().slice(0, 10);
 }
