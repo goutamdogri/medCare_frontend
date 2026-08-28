@@ -368,3 +368,40 @@ export interface ModelMetricsResponse {
   models: Record<string, Record<string, number | null>>;
   by_horizon: Record<string, Record<string, Record<string, number | null>>>;
 }
+
+/* ------------------------------ Pipeline ----------------------------- */
+
+/** POST /api/pipeline/advance-day */
+export interface AdvanceDayResponse {
+  advanced: boolean;
+  from: string;
+  to: string;
+  runId: string | null;
+  sidecarTriggered: boolean;
+}
+
+/** POST /api/pipeline/retry */
+export interface RetryPipelineResponse {
+  asOf: string;
+  purged: Record<string, number>;
+  runId: string | null;
+  sidecarTriggered: boolean;
+}
+
+/** GET /api/pipeline/state */
+export interface PipelineStateResponse {
+  simulatedToday: string;
+}
+
+/** GET /api/pipeline/status/:runId — proxied sidecar shape. */
+export interface PipelineRunStatus {
+  runId: string;
+  status: "running" | "completed" | "failed" | string;
+  triggeredBy?: string;
+  asOf?: string | null;
+  startedAt: string;
+  finishedAt?: string | null;
+  durationSeconds?: number | null;
+  error?: string | null;
+  stepsCompleted?: string[];
+}

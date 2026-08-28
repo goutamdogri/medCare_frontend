@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, Menu, Moon, RefreshCw, Sun } from "lucide-react";
 import { useApp } from "@/context/app-context";
 import { useAuth } from "@/context/auth-context";
+import { PipelineControls } from "@/components/layout/PipelineControls";
 import { cn, } from "@/lib/cn";
 import { timeAgo } from "@/lib/format";
 
@@ -61,6 +62,8 @@ export function TopBar({ title, onMenuClick }: TopBarProps) {
               {" · "}run {run.status} · {timeAgo(run.ranAt)}
             </p>
           )}
+
+          <PipelineControls />
 
           <label className="relative flex items-center">
             <span className="sr-only">Snapshot date</span>

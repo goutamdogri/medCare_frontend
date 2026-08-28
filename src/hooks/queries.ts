@@ -5,8 +5,9 @@ import {
   useQueryClient,
   QueryClient,
 } from "@tanstack/react-query";
-import { apiGet, apiPatch } from "@/api/client";
+import { apiGet, apiPatch, apiPost } from "@/api/client";
 import type {
+  AdvanceDayResponse,
   AgingResponse,
   AlertItem,
   AlertsResponse,
@@ -18,8 +19,11 @@ import type {
   KpiResponse,
   MetaResponse,
   ModelMetricsResponse,
+  PipelineRunStatus,
+  PipelineStateResponse,
   ReplenishmentResponse,
   ReplenishmentSummary,
+  RetryPipelineResponse,
   RunEntry,
   TransferReason,
   TransfersResponse,
@@ -257,5 +261,63 @@ export function useDigest(asOf: AsOf) {
     queryKey: ["digest", asOf],
     enabled: Boolean(asOf),
     queryFn: ({ signal }) => apiGet<DigestResponse>("/api/digest", { asOf }, signal),
+  });
+}
+
+/* ------------------------------ pipeline ----------------------------- */
+
+/**
+ * Invalidate every snapshot-keyed query and the meta payload so the UI
+ * reflects the freshly produced date after an advance-day / retry run.
+ */
+function invalidatePipelineQueries(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: ["meta"] });
+  void queryClient.invalidateQueries({ queryKey: ["runs"] });
+}
+
+/** POST /api/pipeline/advance-day — advance the clock by one day + run chain. */
+export function useAdvanceDay() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiPost<AdvanceDayResponse>("/api/pipeline/advance-day", {}),
+    onSuccess: () => invalidatePipelineQueries(queryClient),
+  });
+}
+
+/** POST /api/pipeline/retry — purge + re-run the chain for a selected date. */
+export function useRetryPipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (date: string) =>
+      apiPost<RetryPipelineResponse>("/api/pipeline/retry", { date }),
+    onSuccess: () => invalidatePipelineQueries(queryClient),
+  });
+}
+
+/** GET /api/pipeline/state — current simulated clock. */
+export function usePipelineState() {
+  return useQuery({
+    queryKey: ["pipeline", "state"],
+    queryFn: ({ signal }) =>
+      apiGet<PipelineStateResponse>("/api/pipeline/state", undefined, signal),
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * Poll a single run. The interval is derived from the last known status so
+ * polling stops automatically once the sidecar reports completion/failure.
+ */
+export function usePipelineRunStatus(runId: string | null) {
+  return useQuery<PipelineRunStatus>({
+    queryKey: ["pipeline", "run-status", runId],
+    enabled: Boolean(runId),
+    refetchInterval: (query) =>
+      ((query.state.data as PipelineRunStatus | undefined)?.status ?? "") ===
+      "running"
+        ? 2000
+        : false,
+    queryFn: ({ signal }) =>
+      apiGet<PipelineRunStatus>(`/api/pipeline/status/${runId}`, undefined, signal),
   });
 }
