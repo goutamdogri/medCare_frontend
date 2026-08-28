@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/api/client";
+import { useActivePipelineRun } from "@/hooks/queries";
 import { useAuth } from "@/context/auth-context";
 import {
   AppContext,
@@ -20,6 +21,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [asOfOverride, setAsOfOverride] = useState<string | undefined>(undefined);
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const { status } = useAuth();
+
+  // Mount the global active-run watcher once so data refreshes when a run
+  // completes — including runs rediscovered after a full page reload.
+  useActivePipelineRun();
 
   // The meta payload is only fetched once a session exists; /api/meta is
   // bearer-protected, so skip it on the (unauthenticated) login screen.

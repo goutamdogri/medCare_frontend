@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarPlus, RotateCcw } from "lucide-react";
 import { useApp } from "@/context/app-context";
 import { useToasts } from "@/context/toast-context";
@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/Button";
  *  - "Retry date": purges the previously generated output for the currently
  *    selected date and re-runs the chain for it, without moving the clock.
  */
+type RunSource = "advance" | "retry";
+
 export function PipelineControls() {
   const { asOf, resetToLatest } = useApp();
   const { success, error } = useToasts();
@@ -25,15 +27,26 @@ export function PipelineControls() {
   const advance = useAdvanceDay();
   const retry = useRetryPipeline();
 
-  // The run currently executing belongs to the most recent action.
-  const activeRunId = advance.data?.runId ?? retry.data?.runId ?? null;
+  // Track which action owns the active run so the correct button shows the
+  // spinner (instead of both / the wrong one).
+  const [runSource, setRunSource] = useState<RunSource | null>(null);
+
+  const advanceRunId = advance.data?.runId ?? null;
+  const retryRunId = retry.data?.runId ?? null;
+
+  // The run we are polling is the one from the owning action.
+  const activeRunId = runSource === "retry" ? retryRunId : advanceRunId;
   const status = usePipelineRunStatus(activeRunId);
 
-  const running = status.data?.status === "running" || advance.isPending || retry.isPending;
+  const running = status.data?.status === "running";
+
+  // Prevent the completion/failure toast from firing on every render: only
+  // fire when the status actually transitions to a terminal state.
+  const prevStatusRef = useRef<string | undefined>(undefined);
 
   const triggerError = advance.error ?? retry.error;
 
-  // Surface trigger/transport failures and run completion as toasts.
+  // Surface trigger/transport failures as toasts.
   useEffect(() => {
     if (triggerError) {
       error(triggerError instanceof Error ? triggerError.message : "Pipeline action failed");
@@ -42,16 +55,27 @@ export function PipelineControls() {
 
   useEffect(() => {
     const s = status.data?.status;
-    if (!s || s === "running") return;
+    if (!s) return;
+    // Reset the transition baseline whenever a run becomes active so a
+    // subsequent run can fire its own completion toast.
+    if (s === "running") {
+      prevStatusRef.current = "running";
+      return;
+    }
+    // Only react to a real transition into a terminal state.
+    if (s === prevStatusRef.current) return;
+    prevStatusRef.current = s;
     if (s === "completed") {
-      success(activeRunId ? `Pipeline run completed` : "Pipeline run completed");
+      success("Pipeline run completed");
     } else if (s === "failed") {
       const reason = status.data?.error ? `: ${status.data.error}` : "";
       error(`Pipeline run failed${reason}`);
     }
-  }, [status.data, activeRunId, success, error]);
+    // Data refresh on completion is handled globally by useActivePipelineRun.
+  }, [status.data?.status, status.data?.error, success, error]);
 
   const handleAdvance = () => {
+    setRunSource("advance");
     advance.mutate(undefined, {
       onSuccess: (data) => {
         success(
@@ -70,6 +94,7 @@ export function PipelineControls() {
       error("No date selected to retry");
       return;
     }
+    setRunSource("retry");
     retry.mutate(asOf, {
       onSuccess: (data) => {
         const purged = Object.values(data.purged ?? {}).some((n) => n > 0);
@@ -88,8 +113,8 @@ export function PipelineControls() {
         type="button"
         size="sm"
         variant="primary"
-        loading={advance.isPending || status.data?.status === "running"}
-        disabled={running}
+        loading={advance.isPending || (running && runSource === "advance")}
+        disabled={running || advance.isPending}
         onClick={handleAdvance}
         title="Advance the simulated date by one day and run the forecast chain"
       >
@@ -101,8 +126,8 @@ export function PipelineControls() {
         type="button"
         size="sm"
         variant="outline"
-        loading={retry.isPending}
-        disabled={running || !asOf}
+        loading={retry.isPending || (running && runSource === "retry")}
+        disabled={running || retry.isPending || !asOf}
         onClick={handleRetry}
         title={
           asOf

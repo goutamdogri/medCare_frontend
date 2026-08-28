@@ -393,6 +393,24 @@ export interface PipelineStateResponse {
   simulatedToday: string;
 }
 
+/** GET /api/pipeline/runs — persisted ML run rows (pipeline_run). */
+export interface PipelineRunEntry {
+  runId: string;
+  runType: string;
+  status: "running" | "completed" | "failed" | string;
+  triggeredBy: string;
+  asOf: string | null;
+  stepsCompleted: string[];
+  error: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  durationSeconds: number | null;
+}
+
+export interface PipelineRunsResponse {
+  runs: PipelineRunEntry[];
+}
+
 /** GET /api/pipeline/status/:runId — proxied sidecar shape. */
 export interface PipelineRunStatus {
   runId: string;

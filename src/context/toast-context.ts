@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 /* ------------------------------------------------------------------ */
 /* Context + hook (kept JSX-free for react-refresh)                    */
@@ -28,13 +28,23 @@ export function useToasts(): ToastContextValue & {
   const contextValue = useContext(ToastContext);
   if (!contextValue)
     throw new Error("useToasts must be used within <ToastProvider>");
-  const { notify } = contextValue;
+  // Memoize on the stable primitives (`notify`/`dismiss`) rather than the
+  // context object, which is a fresh reference on every render. Otherwise
+  // `success`/`error` become new functions each render and any consumer
+  // effect depending on them re-fires endlessly.
+  const { notify, dismiss, toasts } = contextValue;
+  const onNotify = useCallback(
+    (kind: ToastKind, message: string) => notify(kind, message),
+    [notify],
+  );
   return useMemo(
     () => ({
-      ...contextValue,
-      success: (message: string) => notify("success", message),
-      error: (message: string) => notify("error", message),
+      toasts,
+      dismiss,
+      notify: onNotify,
+      success: (message: string) => onNotify("success", message),
+      error: (message: string) => onNotify("error", message),
     }),
-    [contextValue, notify],
+    [toasts, dismiss, onNotify],
   );
 }

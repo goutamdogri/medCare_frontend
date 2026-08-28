@@ -1,44 +1,71 @@
 import { NavLink } from "react-router-dom";
 import { Radio } from "lucide-react";
-import { useRuns } from "@/hooks/queries";
+import { usePipelineRuns, useRuns } from "@/hooks/queries";
 import { cn } from "@/lib/cn";
 import { timeAgo, formatDuration } from "@/lib/format";
 import { NAV_ITEMS } from "@/components/layout/nav";
 import { BrandMark } from "@/components/layout/BrandMark";
 
 function PipelineChip() {
-  const { data: runs, isLoading } = useRuns(1);
+  // Live run status comes from `pipeline_run` (updated while the chain runs),
+  // polled every few seconds so the chip reflects an in-flight run.
+  const { data: live, isLoading: liveLoading } = usePipelineRuns(1);
+  const active = live?.runs?.[0];
+  const activeRunning = active?.status === "running";
+
+  const { data: runs } = useRuns(1);
   const latest = runs?.[0];
   const ok = latest?.status === "success";
-  const dotClass = isLoading
+
+  const dotClass = liveLoading
     ? "bg-sub animate-pulse"
-    : ok
-      ? "bg-success"
-      : latest
-        ? "bg-danger animate-pulse"
-        : "bg-sub";
+    : activeRunning
+      ? "bg-warning animate-pulse"
+      : ok
+        ? "bg-success"
+        : latest
+          ? "bg-danger animate-pulse"
+          : "bg-sub";
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-app px-3 py-2.5">
+    <div
+      className={cn(
+        "flex items-center gap-2.5 rounded-xl border bg-app px-3 py-2.5 transition-colors",
+        activeRunning
+          ? "border-warning/40 shadow-[0_0_0_1px_rgb(245_158_11/0.15),0_0_18px_-6px_rgb(245_158_11/0.5)]"
+          : "border-line",
+      )}
+    >
       <span className="relative flex size-2.5 shrink-0">
-        <span className={cn("absolute inline-flex size-full rounded-full opacity-40", ok && !isLoading && "animate-ping")} />
+        <span className={cn("absolute inline-flex size-full rounded-full opacity-40", (activeRunning || ok) && !liveLoading && "animate-ping")} />
         <span className={cn("relative inline-flex size-2.5 rounded-full", dotClass)} />
       </span>
       <div className="min-w-0 leading-tight">
         <p className="text-[11px] font-bold text-ink">
-          {isLoading
+          {liveLoading
             ? "Pipeline…"
-            : latest
-              ? `Run ${latest.status}`
-              : "Pipeline idle"}
+            : activeRunning
+              ? `Running · ${active?.runType ?? "pipeline"}`
+              : latest
+                ? `Run ${latest.status}`
+                : "Pipeline idle"}
         </p>
         <p className="truncate text-[10px] font-medium text-sub tabular-nums">
-          {latest
-            ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
-            : "No runs recorded yet"}
+          {activeRunning && active
+            ? active.asOf
+              ? `${active.runType} · ${active.asOf}`
+              : `${(active.stepsCompleted?.length ?? 0) > 0 ? active.stepsCompleted.join(", ") : "starting"}…`
+            : latest
+              ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
+              : "No runs recorded yet"}
         </p>
       </div>
-      <Radio className="ml-auto size-3.5 shrink-0 text-sub" />
+      <Radio
+        className={cn(
+          "ml-auto size-3.5 shrink-0",
+          activeRunning ? "text-warning" : "text-sub",
+        )}
+      />
     </div>
   );
 }

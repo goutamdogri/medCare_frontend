@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   keepPreviousData,
   useMutation,
@@ -20,6 +21,7 @@ import type {
   MetaResponse,
   ModelMetricsResponse,
   PipelineRunStatus,
+  PipelineRunsResponse,
   PipelineStateResponse,
   ReplenishmentResponse,
   ReplenishmentSummary,
@@ -269,10 +271,31 @@ export function useDigest(asOf: AsOf) {
 /**
  * Invalidate every snapshot-keyed query and the meta payload so the UI
  * reflects the freshly produced date after an advance-day / retry run.
+ *
+ * Called at trigger time (roll back the stale view) and again once the run
+ * actually completes (the data is only readable after the chain finishes).
  */
 function invalidatePipelineQueries(queryClient: QueryClient) {
   void queryClient.invalidateQueries({ queryKey: ["meta"] });
   void queryClient.invalidateQueries({ queryKey: ["runs"] });
+  void queryClient.invalidateQueries({ queryKey: ["pipeline", "run-status"] });
+  // Let the live chip && global watcher rediscover the just-started run so the
+  // running-state polling kicks in immediately (no manual reload).
+  void queryClient.invalidateQueries({ queryKey: ["pipeline", "runs"] });
+  void queryClient.invalidateQueries({ queryKey: ["pipeline", "active-run"] });
+  // Every endpoint keyed by the selected as-of date reads regenerated rows,
+  // so the whole set must be invalidated for the new data to appear.
+  void queryClient.invalidateQueries({ queryKey: ["kpi"] });
+  void queryClient.invalidateQueries({ queryKey: ["aging"] });
+  void queryClient.invalidateQueries({ queryKey: ["forecasts"] });
+  void queryClient.invalidateQueries({ queryKey: ["replenishment"] });
+  void queryClient.invalidateQueries({ queryKey: ["transfers"] });
+  void queryClient.invalidateQueries({ queryKey: ["writeoffs"] });
+  void queryClient.invalidateQueries({ queryKey: ["alerts"] });
+  void queryClient.invalidateQueries({ queryKey: ["digest"] });
+  void queryClient.invalidateQueries({ queryKey: ["demand-history"] });
+  void queryClient.invalidateQueries({ queryKey: ["flu"] });
+  void queryClient.invalidateQueries({ queryKey: ["model-metrics"] });
 }
 
 /** POST /api/pipeline/advance-day — advance the clock by one day + run chain. */
@@ -294,6 +317,17 @@ export function useRetryPipeline() {
   });
 }
 
+/**
+ * Manually force re-fetch of every snapshot-keyed query once a pipeline run
+ * finishes. The trigger-time invalidation above runs while the chain is still
+ * executing, so a second invalidation here guarantees the UI reflects the
+ * freshly written rows (otherwise the dashboard stays stale until a reload).
+ */
+export function useRefreshPipelineData() {
+  const queryClient = useQueryClient();
+  return () => invalidatePipelineQueries(queryClient);
+}
+
 /** GET /api/pipeline/state — current simulated clock. */
 export function usePipelineState() {
   return useQuery({
@@ -301,6 +335,63 @@ export function usePipelineState() {
     queryFn: ({ signal }) =>
       apiGet<PipelineStateResponse>("/api/pipeline/state", undefined, signal),
     staleTime: 60_000,
+  });
+}
+
+/** GET /api/pipeline/runs — persisted ML run history (pipeline_run). */
+export function usePipelineRuns(limit = 10) {
+  return useQuery({
+    queryKey: ["pipeline", "runs", limit],
+    queryFn: ({ signal }) =>
+      apiGet<PipelineRunsResponse>("/api/pipeline/runs", { limit }, signal),
+    // Poll while the newest run is still active so the UI goes live the moment
+    // a run starts and settles the moment it finishes — no manual reload needed.
+    refetchInterval: (query) =>
+      query.state.data?.runs?.[0]?.status === "running" ? 2000 : false,
+    staleTime: 5_000,
+  });
+}
+
+/**
+ * Global watcher for the latest persisted run. Polls `/api/pipeline/runs`
+ * while any run is active and calls `refreshPipelineData()` exactly once when
+ * a run transitions `running → completed/failed`.
+ *
+ * Mounting this at the app root makes completion-driven data refresh robust
+ * across full page reloads and from any page — it does not depend on the
+ * component that originally triggered the run (whose mutation state is lost
+ * on refresh). Run state lives in `pipeline_run` (PostgreSQL), so an in-flight
+ * run is rediscovered here after a reload.
+ */
+export function useActivePipelineRun() {
+  const refreshPipelineData = useRefreshPipelineData();
+  const handledRef = useRef<string | null>(null);
+
+  return useQuery<PipelineRunsResponse>({
+    queryKey: ["pipeline", "active-run"],
+    queryFn: ({ signal }) =>
+      apiGet<PipelineRunsResponse>("/api/pipeline/runs", { limit: 1 }, signal),
+    refetchInterval: (query) => {
+      const latest = query.state.data?.runs?.[0];
+      // Fast poll while active; slower heartbeat when idle so a run started
+      // from another session (cron / another tab) is picked up without reload.
+      return latest?.status === "running" ? 2000 : 15_000;
+    },
+    select: (data) => {
+      const latest = data.runs?.[0];
+      if (latest) {
+        if (latest.status === "running") {
+          // Track the in-flight run id; when it completes we refresh below.
+          handledRef.current = null;
+        } else if (handledRef.current !== latest.runId) {
+          // Terminal state for a run we haven't already handled → refresh and
+          // mark it done so the invalidation fires only once per run.
+          handledRef.current = latest.runId;
+          refreshPipelineData();
+        }
+      }
+      return data;
+    },
   });
 }
 
