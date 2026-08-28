@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth-context";
 import { Toaster } from "@/components/ui/Toaster";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { createQueryClient } from "@/hooks/queries";
 
 // Route-level code splitting keeps the initial bundle lean.
@@ -44,6 +45,7 @@ export default function App() {
         <ToastProvider>
           <AppProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <ErrorBoundary>
                 <Routes>
                   <Route
