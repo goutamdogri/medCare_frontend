@@ -5,17 +5,11 @@ import {
   useDailyCurves,
   useFlu,
   useForecasts,
-  useModelMetrics,
-  useRuns,
 } from "@/hooks/queries";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { ForecastBand } from "@/features/demand-sensing/ForecastBand";
-import {
-  ModelMixDonut,
-  SensingTable,
-  WmapeNote,
-} from "@/features/demand-sensing/SensingPanels";
+import { SensingTable } from "@/features/demand-sensing/SensingPanels";
 import { isoDaysAgo } from "@/lib/format";
 
 /** Page 2 — short-term forecast accuracy via leading indicators. */
@@ -31,8 +25,6 @@ export default function DemandSensing() {
     (asOf ? isoDaysAgo(-42, asOf) : undefined);
   const fluQuery = useFlu(region, historyFrom, lastForecastDate);
   const curvesQuery = useDailyCurves(asOf);
-  const runsQuery = useRuns(1);
-  const metricsQuery = useModelMetrics(asOf);
 
   const skuOptions =
     meta?.skus.map((sku) => ({
@@ -74,14 +66,8 @@ export default function DemandSensing() {
         asOf={asOf ?? ""}
       />
 
-      <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SensingTable query={forecastQuery} skuId={skuId} region={region} windowDays={42} />
-        </div>
-        <div className="flex flex-col gap-5 sm:gap-6">
-          <ModelMixDonut query={forecastQuery} />
-          <WmapeNote runsQuery={runsQuery} metricsQuery={metricsQuery} />
-        </div>
+      <div className="grid grid-cols-1 gap-5 sm:gap-6">
+        <SensingTable query={forecastQuery} skuId={skuId} region={region} windowDays={42} />
       </div>
     </div>
   );

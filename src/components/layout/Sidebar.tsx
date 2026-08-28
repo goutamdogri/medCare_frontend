@@ -1,12 +1,16 @@
 import { NavLink } from "react-router-dom";
 import { Radio } from "lucide-react";
 import { usePipelineRuns, useRuns } from "@/hooks/queries";
+import { useApp } from "@/context/app-context";
 import { cn } from "@/lib/cn";
-import { timeAgo, formatDuration } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
 import { NAV_ITEMS } from "@/components/layout/nav";
 import { BrandMark } from "@/components/layout/BrandMark";
 
-function PipelineChip() {
+function PipelineStatus() {
+  const { meta } = useApp();
+  const lastRun = meta?.latestRun;
+
   // Live run status comes from `pipeline_run` (updated while the chain runs),
   // polled every few seconds so the chip reflects an in-flight run.
   const { data: live, isLoading: liveLoading } = usePipelineRuns(1);
@@ -14,25 +18,35 @@ function PipelineChip() {
   const activeRunning = active?.status === "running";
 
   const { data: runs } = useRuns(1);
-  const latest = runs?.[0];
-  const ok = latest?.status === "success";
+  const latestAudit = runs?.[0];
+  const ok = latestAudit?.status === "success";
 
   const dotClass = liveLoading
     ? "bg-sub animate-pulse"
     : activeRunning
-      ? "bg-warning animate-pulse"
+      ? "bg-success animate-pulse"
       : ok
         ? "bg-success"
-        : latest
+        : latestAudit
           ? "bg-danger animate-pulse"
           : "bg-sub";
+
+  const lastRan = activeRunning ? "Pipeline running" : "Pipeline idle";
+
+  const detail = activeRunning
+    ? `Last run ${timeAgo(active.startedAt)}`
+    : lastRun
+      ? `Last run ${timeAgo(lastRun.ranAt)}`
+      : latestAudit
+        ? `Last run ${timeAgo(latestAudit.createdAt)}`
+        : "No runs recorded yet";
 
   return (
     <div
       className={cn(
         "flex items-center gap-2.5 rounded-xl border bg-app px-3 py-2.5 transition-colors",
         activeRunning
-          ? "border-warning/40 shadow-[0_0_0_1px_rgb(245_158_11/0.15),0_0_18px_-6px_rgb(245_158_11/0.5)]"
+          ? "border-success/40 shadow-[0_0_0_1px_rgb(34_197_94/0.15),0_0_18px_-6px_rgb(34_197_94/0.5)]"
           : "border-line",
       )}
     >
@@ -41,29 +55,17 @@ function PipelineChip() {
         <span className={cn("relative inline-flex size-2.5 rounded-full", dotClass)} />
       </span>
       <div className="min-w-0 leading-tight">
-        <p className="text-[11px] font-bold text-ink">
-          {liveLoading
-            ? "Pipeline…"
-            : activeRunning
-              ? `Running · ${active?.runType ?? "pipeline"}`
-              : latest
-                ? `Run ${latest.status}`
-                : "Pipeline idle"}
+        <p className="truncate text-[11px] font-bold text-ink tabular-nums">
+          {liveLoading ? "Pipeline…" : lastRan}
         </p>
-        <p className="truncate text-[10px] font-medium text-sub tabular-nums">
-          {activeRunning && active
-            ? active.asOf
-              ? `${active.runType} · ${active.asOf}`
-              : `${(active.stepsCompleted?.length ?? 0) > 0 ? active.stepsCompleted.join(", ") : "starting"}…`
-            : latest
-              ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
-              : "No runs recorded yet"}
+        <p className="truncate text-[10px] font-medium text-sub">
+          {detail}
         </p>
       </div>
       <Radio
         className={cn(
           "ml-auto size-3.5 shrink-0",
-          activeRunning ? "text-warning" : "text-sub",
+          activeRunning ? "text-success" : "text-sub",
         )}
       />
     </div>
@@ -102,7 +104,7 @@ export function SidebarNav({ onNavigate }: SidebarContentProps) {
         })}
       </nav>
       <div className="border-t border-line p-3">
-        <PipelineChip />
+        <PipelineStatus />
       </div>
     </>
   );

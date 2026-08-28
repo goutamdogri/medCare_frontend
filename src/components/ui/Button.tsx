@@ -35,7 +35,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold whitespace-nowrap transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-55",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold whitespace-nowrap transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-55 relative",
         size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm",
         VARIANT_CLASSES[variant],
         className,
@@ -43,8 +43,10 @@ export function Button({
       disabled={disabled ?? loading}
       {...rest}
     >
-      {loading && <LoaderCircle className="size-4 animate-spin" />}
-      {children}
+      {loading && <LoaderCircle className="absolute size-4 animate-spin" />}
+      <span className={cn("inline-flex items-center gap-2", loading && "invisible")}>
+        {children}
+      </span>
     </button>
   );
 }
