@@ -44,6 +44,7 @@ interface Props {
   fluQuery: UseQueryResult<FluPoint[]>;
   curvesQuery: UseQueryResult<DailyCurvesResponse>;
   asOf: string;
+  windowDays?: number;
 }
 
 function buildRows(
@@ -80,6 +81,7 @@ export function ForecastBand({
   fluQuery,
   curvesQuery,
   asOf,
+  windowDays = 42,
 }: Props) {
   return (
     <Widget
@@ -138,7 +140,9 @@ function BandChartInner({
       { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
     );
 
-    return () => animation.kill();
+    return () => {
+      animation.kill();
+    };
   }, [rows, windowDays]);
 
   return (

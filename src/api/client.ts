@@ -1,6 +1,8 @@
 import { mockAcknowledge, mockGet } from "@/api/mockData";
+import { getAccessToken } from "./auth-token";
 
 const BASE = import.meta.env.VITE_API_BASE ?? "";
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -55,6 +57,9 @@ export async function apiGet<T>(
 ): Promise<T> {
   if (USE_MOCK_API) {
     if (signal?.aborted) throw new DOMException("The request was aborted", "AbortError");
+    if (path === "/api/auth/me") {
+      return { user: { id: "mock-user-1", name: "Demo User", email: "demo@medcare.local", role: "admin", createdAt: new Date().toISOString() } } as unknown as T;
+    }
     return mockGet(path, params) as T;
   }
   const response = await fetch(buildUrl(path, params), {
@@ -70,6 +75,10 @@ export async function apiPost<T>(
   body: unknown,
   options?: { auth?: boolean },
 ): Promise<T> {
+  if (USE_MOCK_API && (path === "/api/auth/signin" || path === "/api/auth/signup")) {
+    const user = { id: "mock-user-1", name: "Demo User", email: "demo@medcare.local", role: "admin", createdAt: new Date().toISOString() };
+    return { token: "mock-jwt-token-abc123", user } as unknown as T;
+  }
   const response = await fetch(BASE + path, {
     method: "POST",
     headers: headers(options?.auth ?? true),
