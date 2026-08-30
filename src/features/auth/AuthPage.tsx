@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import {
   HeartPulse,
-  Package,
-  ClipboardCheck
+  Package
 } from "lucide-react";
 import { ApiError } from "@/api/client";
 import { useAuth } from "@/context/auth-context";

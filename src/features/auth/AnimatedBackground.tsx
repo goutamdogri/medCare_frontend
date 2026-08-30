@@ -12,15 +12,20 @@ const COLORS = [
 ];
 
 function AnimatedBackground() {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
 
     if (!container) return;
 
-    const dots = [];
-    const animations = [];
+    const dots: Array<{
+      dot: HTMLSpanElement;
+      state: { x: number; y: number; cursorX: number; cursorY: number };
+      baseX: number;
+      baseY: number;
+    }> = [];
+    const animations: Array<{ kill(): void }> = [];
 
     // =========================================
     // CREATE DOTS
@@ -53,7 +58,7 @@ function AnimatedBackground() {
         ];
 
  dot.style.opacity =
-  gsap.utils.random(0.55, 0.9);
+  String(gsap.utils.random(0.55, 0.9));
 
       container.appendChild(dot);
 
@@ -232,7 +237,7 @@ function AnimatedBackground() {
     // MOUSE INTERACTION
     // =========================================
 
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event: MouseEvent) => {
       const rect =
         container.getBoundingClientRect();
 
