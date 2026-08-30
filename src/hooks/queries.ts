@@ -23,6 +23,7 @@ import type {
   PipelineRunStatus,
   PipelineRunsResponse,
   PipelineStateResponse,
+  ReplenishmentCoverage,
   ReplenishmentResponse,
   ReplenishmentSummary,
   RetryPipelineResponse,
@@ -208,6 +209,24 @@ export function useReplenishmentSummary(asOf: AsOf) {
     enabled: Boolean(asOf),
     queryFn: ({ signal }) =>
       apiGet<ReplenishmentSummary>("/api/replenishment/summary", { asOf }, signal),
+  });
+}
+
+/**
+ * Order-to-transfer reconciliation for one SKU × region — powers the
+ * "recommended transfer plan / remaining to order" section of the order-book
+ * audit drawer.
+ */
+export function useSkuCoverage(asOf: AsOf, skuId: string, region: string) {
+  return useQuery({
+    queryKey: ["replenishment", "coverage", asOf, skuId, region],
+    enabled: Boolean(asOf && skuId && region),
+    queryFn: ({ signal }) =>
+      apiGet<ReplenishmentCoverage>(
+        `/api/replenishment/${encodeURIComponent(skuId)}/${encodeURIComponent(region)}/coverage`,
+        { asOf },
+        signal,
+      ),
   });
 }
 

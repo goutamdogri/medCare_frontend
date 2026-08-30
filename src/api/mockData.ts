@@ -11,9 +11,12 @@ import type {
   KpiResponse,
   MetaResponse,
   ModelMetricsResponse,
+  InboundTransfer,
+  ReplenishmentCoverage,
   ReplenishmentResponse,
   ReplenishmentSummary,
   RunEntry,
+  TransferReason,
   TransfersResponse,
   WriteoffCumulativeResponse,
   WriteoffsResponse,
@@ -216,6 +219,39 @@ export const mockWriteoffs: WriteoffsResponse = {
   totals: { batchesAtRisk: 2, totalResidualUnits: 470, totalResidualValueInr: 918 },
 };
 
+/**
+ * Order-to-transfer reconciliation for the mock API. Inbound transfers are
+ * the mock transfer rows delivering this SKU into the region; netToOrder is
+ * the order qty minus whatever those transfers already cover (floored at 0).
+ */
+export function makeSkuCoverage(skuId = "N02BE-01", region = "WH_INDORE"): ReplenishmentCoverage {
+  const order = replRows.find((row) => row.skuId === skuId && row.region === region);
+  const transfers: InboundTransfer[] = mockTransfers.content
+    .filter((t) => t.skuId === skuId && t.toLocation === region)
+    .map((t) => ({
+      id: t.id,
+      batchId: t.batchId,
+      fromLocation: t.fromLocation,
+      qtyUnits: t.qtyUnits,
+      transferLeadDays: t.transferLeadDays,
+      daysToExpiry: t.daysToExpiry,
+      reason: t.reason as TransferReason,
+      carrier: t.carrier,
+    }));
+  const orderQty = order?.orderQty ?? 0;
+  const inboundUnits = transfers.reduce((acc, t) => acc + t.qtyUnits, 0);
+  return {
+    asOf: MOCK_AS_OF,
+    skuId,
+    region,
+    orderQty,
+    inboundUnits,
+    netToOrder: Math.max(0, orderQty - inboundUnits),
+    coveragePct: orderQty > 0 ? Math.min(100, (inboundUnits / orderQty) * 100) : null,
+    inboundTransfers: transfers,
+  };
+}
+
 export const mockAlerts: AlertItem[] = [
   { id: 101, severity: "RED", type: "shortage_risk", skuId: "N02BE-01", region: "WH_INDORE", facts: { criticality: "critical", days_of_supply: 0, lead_time_days: 6, order_value_inr: 964, recommended_order_units: 402 }, action: "Release replenishment order today.", acknowledged: false, acknowledgedBy: null, acknowledgedAt: null, createdAt: "2026-08-26T06:02:00.000Z" },
   { id: 102, severity: "AMBER", type: "expiry_writeoff_risk", skuId: "A10BA-04", region: "DC_DELHI", facts: { criticality: "standard", days_of_supply: 12, order_value_inr: 630 }, action: "Review transfer lane before expiry.", acknowledged: false, acknowledgedBy: null, acknowledgedAt: null, createdAt: "2026-08-26T06:04:00.000Z" },
@@ -238,6 +274,10 @@ export function mockGet(path: string, params: Record<string, unknown> = {}): unk
   if (path === "/api/model/metrics") return mockMetrics;
   if (path === "/api/replenishment") return mockReplenishment;
   if (path === "/api/replenishment/summary") return mockReplenishmentSummary;
+  const coverageMatch = path.match(/^\/api\/replenishment\/([^/]+)\/([^/]+)\/coverage$/);
+  if (coverageMatch) {
+    return makeSkuCoverage(decodeURIComponent(coverageMatch[1]), decodeURIComponent(coverageMatch[2]));
+  }
   if (path === "/api/transfers") return { ...mockTransfers, content: params.reason ? mockTransfers.content.filter((row) => row.reason === params.reason) : mockTransfers.content };
   if (path === "/api/writeoffs") return mockWriteoffs;
   if (path === "/api/alerts") return { asOf: MOCK_AS_OF, ...paginated(mockAlerts) } satisfies AlertsResponse;

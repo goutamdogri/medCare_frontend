@@ -220,6 +220,36 @@ export interface ReplenishmentSummary {
   byCriticality: CriticalitySummary[];
 }
 
+/* ----------------- Order-to-transfer reconciliation ------------------ */
+
+/** A single transfer-plan line delivering this SKU into the region. */
+export interface InboundTransfer {
+  id: number;
+  batchId: string | null;
+  fromLocation: string;
+  qtyUnits: number;
+  transferLeadDays: number;
+  daysToExpiry: number | null;
+  reason: TransferReason;
+  carrier: string | null;
+}
+
+/**
+ * How a recommended order is offset by inbound transfers. `netToOrder` is
+ * `orderQty − inboundUnits` floored at 0 — the amount still to be purchased.
+ */
+export interface ReplenishmentCoverage {
+  asOf: string;
+  skuId: string;
+  region: string;
+  orderQty: number;
+  inboundUnits: number;
+  netToOrder: number;
+  /** 0–100 share of the order already covered by inbound transfers; null when no order. */
+  coveragePct: number | null;
+  inboundTransfers: InboundTransfer[];
+}
+
 /* --------------------- Transfers & write-offs ------------------------ */
 
 export interface TransferLaneSummary {
