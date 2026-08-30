@@ -2,60 +2,55 @@ import { useRef } from "react";
 import { NavLink } from "react-router-dom";
 import { Radio } from "lucide-react";
 import gsap from "gsap";
-import { usePipelineRuns, useRuns } from "@/hooks/queries";
-import { useApp } from "@/context/app-context";
+
+import { useRuns } from "@/hooks/queries";
 import { cn } from "@/lib/cn";
 import { timeAgo, formatDuration } from "@/lib/format";
 import { NAV_ITEMS } from "@/components/layout/nav";
 import { BrandMark } from "@/components/layout/BrandMark";
 
 function PipelineChip() {
-  const { meta } = useApp();
-  const lastRun = meta?.latestRun;
-
-  const { data: live, isLoading: liveLoading } = usePipelineRuns(1);
-  const active = live?.runs?.[0];
-  const activeRunning = active?.status === "running";
-
   const { data: runs, isLoading } = useRuns(1);
   const latest = runs?.[0];
   const ok = latest?.status === "success";
 
-  const dotClass = liveLoading
+  const dotClass = isLoading
     ? "bg-sub animate-pulse"
-    : activeRunning
-      ? "bg-success animate-pulse"
-      : ok
-        ? "bg-success"
-        : latest
-          ? "bg-danger animate-pulse"
-          : "bg-sub";
-
-  const lastRan = activeRunning ? "Pipeline running" : "Pipeline idle";
-
-  const detail = activeRunning
-    ? `Last run ${timeAgo(active.startedAt)}`
-    : lastRun
-      ? `Last run ${timeAgo(lastRun.ranAt)}`
+    : ok
+      ? "bg-success"
       : latest
-        ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
-        : "No runs recorded yet";
+        ? "bg-danger animate-pulse"
+        : "bg-sub";
 
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-app px-3 py-2.5">
+    <div className="flex items-center gap-3.5 rounded-xl border border-line bg-app px-3 py-2.5">
       <span className="relative flex size-2.5 shrink-0">
-        <span className={cn("absolute inline-flex size-full rounded-full opacity-40", ok && !isLoading && "animate-ping")} />
-        <span className={cn("relative inline-flex size-2.5 rounded-full", dotClass)} />
+        <span
+          className={cn(
+            "absolute inline-flex size-full rounded-full opacity-40",
+            ok && !isLoading && "animate-ping",
+          )}
+        />
+        <span
+          className={cn(
+            "relative inline-flex size-2.5 rounded-full",
+            dotClass,
+          )}
+        />
       </span>
 
       <div className="min-w-0 leading-tight">
         <p className="truncate text-[11px] font-bold text-ink tabular-nums">
-          {liveLoading ? "Pipeline…" : lastRan}
+          {isLoading ? "Pipeline…" : "Pipeline runs"}
         </p>
+
         <p className="truncate text-[10px] font-medium text-sub tabular-nums">
-          {detail}
+          {latest
+            ? `${formatDuration(latest.durationSeconds)} · ${timeAgo(latest.createdAt)}`
+            : "No runs recorded yet"}
         </p>
       </div>
+
       <Radio className="ml-auto size-3.5 shrink-0 text-sub" />
     </div>
   );
@@ -128,7 +123,7 @@ export function SidebarNav({ onNavigate }: SidebarContentProps) {
       </nav>
 
       <div className="border-t border-line p-3">
-        <PipelineStatus />
+        <PipelineChip />
       </div>
     </>
   );

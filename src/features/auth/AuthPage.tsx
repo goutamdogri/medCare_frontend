@@ -120,6 +120,23 @@ export default function AuthPage() {
           <div className="mb-4 flex rounded-2xl bg-gray-50/50 p-1 border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
             <button
               type="button"
+              onClick={() => setWorkspace("MedCare")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl p-2 transition-all duration-300 ${
+                workspace === "MedCare"
+                  ? "bg-[#5B5EFE] text-white shadow-md shadow-indigo-200"
+                  : "hover:bg-white text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${workspace === 'MedCare' ? 'bg-white/20' : 'bg-gray-100 text-gray-400'}`}>
+                <HeartPulse className="h-4 w-4" />
+              </div>
+              <div className="text-left leading-tight overflow-hidden">
+                <p className={`text-xs md:text-sm font-bold whitespace-nowrap truncate ${workspace === 'MedCare' ? 'text-white' : 'text-gray-900'}`}>Planning Manager</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 setWorkspace("E1");
                 window.location.href = import.meta.env.VITE_E1_FRONTEND_URL || "http://localhost:5173";
@@ -135,23 +152,6 @@ export default function AuthPage() {
               </div>
               <div className="text-left leading-tight overflow-hidden">
                 <p className={`text-xs md:text-sm font-bold whitespace-nowrap truncate ${workspace === 'E1' ? 'text-white' : 'text-gray-900'}`}>Inventory Manager</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setWorkspace("MedCare")}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-xl p-2 transition-all duration-300 ${
-                workspace === "MedCare"
-                  ? "bg-[#5B5EFE] text-white shadow-md shadow-indigo-200"
-                  : "hover:bg-white text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${workspace === 'MedCare' ? 'bg-white/20' : 'bg-gray-100 text-gray-400'}`}>
-                <HeartPulse className="h-4 w-4" />
-              </div>
-              <div className="text-left leading-tight overflow-hidden">
-                <p className={`text-xs md:text-sm font-bold whitespace-nowrap truncate ${workspace === 'MedCare' ? 'text-white' : 'text-gray-900'}`}>MedCare Tower</p>
               </div>
             </button>
           </div>
