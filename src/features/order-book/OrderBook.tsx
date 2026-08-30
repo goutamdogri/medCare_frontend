@@ -275,6 +275,13 @@ export default function OrderBook() {
         onClose={() => setSelected(null)}
         title={selected ? `${skuById.get(selected.skuId)?.brandName ?? ""} · ${selected.skuId}` : ""}
         subtitle={selected ? `@ ${regionById.get(selected.region)?.name ?? selected.region}` : undefined}
+        meta={
+          selected ? (
+            <span className="inline-flex items-center rounded-full border border-line bg-app px-2 py-0.5 text-[11px] font-medium text-sub">
+              Service {Math.round((selected.serviceLevel ?? 0) * 100)}%
+            </span>
+          ) : undefined
+        }
       >
         {selected && <ReplenishmentDetails row={selected} />}
       </Drawer>

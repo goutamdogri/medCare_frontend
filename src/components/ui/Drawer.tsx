@@ -8,6 +8,8 @@ interface DrawerProps {
   onClose: () => void;
   title: string;
   subtitle?: string;
+  /** Small badge rendered inline, right beside the title. */
+  meta?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   className?: string;
@@ -19,6 +21,7 @@ export function Drawer({
   onClose,
   title,
   subtitle,
+  meta,
   children,
   footer,
   className,
@@ -53,8 +56,11 @@ export function Drawer({
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-          <div>
-            <h3 className="text-base font-bold tracking-tight text-ink">{title}</h3>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-base font-bold tracking-tight text-ink">{title}</h3>
+              {meta}
+            </div>
             {subtitle && <p className="mt-0.5 text-xs text-sub">{subtitle}</p>}
           </div>
           <button
