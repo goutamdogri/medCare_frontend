@@ -2,22 +2,13 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import {
-  AlertCircle,
-  ArrowRight,
-  Eye,
-  EyeOff,
   HeartPulse,
-  Mail,
-  ShieldCheck,
-  Sparkles,
-  User as UserIcon,
-  Lock,
+  Package,
+  ClipboardCheck
 } from "lucide-react";
 import { ApiError } from "@/api/client";
-import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/auth-context";
 import { useToasts } from "@/context/toast-context";
-import { cn } from "@/lib/cn";
 
 type Mode = "signin" | "signup";
 
@@ -54,10 +45,13 @@ interface Fields {
 
 const INITIAL: Fields = { name: "", email: "", password: "", confirm: "" };
 
+import AnimatedBackground from "./AnimatedBackground";
+
 export default function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [fields, setFields] = useState<Fields>(INITIAL);
-  const [showPassword, setShowPassword] = useState(false);
+  const [workspace, setWorkspace] = useState("MedCare");
+  
   const navigate = useNavigate();
   const { success, error } = useToasts();
   const { signin, signup } = useAuth();
@@ -79,298 +73,289 @@ export default function AuthPage() {
 
   const errors = useMemo(() => validate(mode, fields), [mode, fields]);
 
-  const set = (key: keyof Fields) => (value: string) =>
-    setFields((prev) => ({ ...prev, [key]: value }));
+  const set = (key: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFields((prev) => ({ ...prev, [key]: e.target.value }));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (Object.keys(errors).length > 0) {
-      error("Please fix the highlighted fields");
+      error(Object.values(errors)[0]);
       return;
     }
     mutation.mutate(undefined, {
       onSuccess: () => {
         success(mode === "signin" ? "Welcome back" : "Account created — welcome");
-        navigate("/", { replace: true });
+        if (workspace === "MedCare") {
+            navigate("/", { replace: true });
+        } else {
+            window.location.href = import.meta.env.VITE_E1_FRONTEND_URL || "http://localhost:5173";
+        }
       },
       onError: (err) => error(messageFor(err, "Something went wrong")),
     });
   };
 
-  const switchMode = (next: Mode) => {
-    setMode(next);
-    setFields(INITIAL);
-    mutation.reset();
-  };
+  const isLogin = mode === "signin";
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app lg:flex-row">
       <BrandPanel />
-      <div className="relative flex flex-1 items-center justify-center px-5 py-10 sm:px-8 lg:px-16">
-        <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
-            <BrandLockup />
+      
+      {/* Right Side */}
+      <section className="flex flex-1 items-center justify-center overflow-hidden bg-white px-6 py-12">
+        <div className="w-full max-w-md mx-auto">
+          {/* Header */}
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-950">
+              {isLogin ? "Welcome back" : "Create your account"}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {isLogin
+                ? "Sign in to manage your control tower."
+                : "Start managing your supply chain smarter."}
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-line bg-card/80 p-6 shadow-card backdrop-blur-xl sm:p-9">
-            <div className="mb-8 flex rounded-2xl bg-app p-1">
-              {(["signin", "signup"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => switchMode(m)}
-                  className={cn(
-                    "flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all",
-                    mode === m
-                      ? "bg-card text-ink shadow-sm"
-                      : "text-sub hover:text-ink",
-                  )}
-                >
-                  {m === "signin" ? "Sign in" : "Create account"}
-                </button>
-              ))}
+          {/* Workspace Toggle */}
+          <div className="mb-4 flex rounded-2xl bg-gray-50/50 p-1 border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+            <button
+              type="button"
+              onClick={() => setWorkspace("MedCare")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl p-2 transition-all duration-300 ${
+                workspace === "MedCare"
+                  ? "bg-[#5B5EFE] text-white shadow-md shadow-indigo-200"
+                  : "hover:bg-white text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${workspace === 'MedCare' ? 'bg-white/20' : 'bg-gray-100 text-gray-400'}`}>
+                <HeartPulse className="h-4 w-4" />
+              </div>
+              <div className="text-left leading-tight overflow-hidden">
+                <p className={`text-xs md:text-sm font-bold whitespace-nowrap truncate ${workspace === 'MedCare' ? 'text-white' : 'text-gray-900'}`}>Planning Manager</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setWorkspace("E1");
+                window.location.href = import.meta.env.VITE_E1_FRONTEND_URL || "http://localhost:5173";
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl p-2 transition-all duration-300 ${
+                workspace === "E1"
+                  ? "bg-[#5B5EFE] text-white shadow-md shadow-indigo-200"
+                  : "hover:bg-white text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${workspace === 'E1' ? 'bg-white/20' : 'bg-gray-100 text-gray-400'}`}>
+                <Package className="h-4 w-4" />
+              </div>
+              <div className="text-left leading-tight overflow-hidden">
+                <p className={`text-xs md:text-sm font-bold whitespace-nowrap truncate ${workspace === 'E1' ? 'text-white' : 'text-gray-900'}`}>Inventory Manager</p>
+              </div>
+            </button>
+          </div>
+          
+          <p className="mb-4 text-xs text-gray-500">Choose the workspace you want to open after signing in.</p>
+
+          {mutation.isError && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-600">
+              {messageFor(mutation.error, "Something went wrong")}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={submit} className="space-y-3.5">
+            {/* Name - Signup only */}
+            {!isLogin && (
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-800">
+                  Full name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={fields.name}
+                  onChange={set("name")}
+                  required={!isLogin}
+                  placeholder="John Doe"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+            )}
+
+            {/* Email */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-gray-800">
+                Email address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={fields.email}
+                onChange={set("email")}
+                required
+                placeholder="you@company.com"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+              />
             </div>
 
-            <h2 className="text-2xl font-extrabold tracking-tight text-ink">
-              {mode === "signin" ? "Welcome back" : "Join the control tower"}
-            </h2>
-            <p className="mt-1.5 text-sm text-sub">
-              {mode === "signin"
-                ? "Sign in to your workspace to continue."
-                : "Create an account to start planning your supply chain."}
-            </p>
+            {/* Password */}
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-sm font-semibold text-gray-800">
+                  Password
+                </label>
 
-            <form onSubmit={submit} noValidate className="mt-8 space-y-5">
-              {mode === "signup" && (
-                <Field
-                  label="Full name"
-                  icon={<UserIcon className="size-[18px]" />}
-                  value={fields.name}
-                  error={errors.name}
-                  autoComplete="name"
-                  placeholder="Ada Lovelace"
-                  onChange={set("name")}
-                />
-              )}
-
-              <Field
-                label="Email"
-                type="email"
-                icon={<Mail className="size-[18px]" />}
-                value={fields.email}
-                error={errors.email}
-                autoComplete="email"
-                placeholder="you@company.com"
-                onChange={set("email")}
-              />
-
-              <Field
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                icon={<Lock className="size-[18px]" />}
-                value={fields.password}
-                error={errors.password}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                placeholder={mode === "signin" ? "••••••••" : "8+ characters"}
-                onChange={set("password")}
-                trailing={
+                {isLogin && (
                   <button
                     type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="text-sub transition-colors hover:text-ink"
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                   >
-                    {showPassword ? (
-                      <EyeOff className="size-[18px]" />
-                    ) : (
-                      <Eye className="size-[18px]" />
-                    )}
+                    Forgot password?
                   </button>
-                }
+                )}
+              </div>
+              <input
+                type="password"
+                name="password"
+                value={fields.password}
+                onChange={set("password")}
+                required
+                placeholder="Enter your password"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
               />
+            </div>
 
-              {mode === "signup" && (
-                <Field
-                  label="Confirm password"
-                  type={showPassword ? "text" : "password"}
-                  icon={<Lock className="size-[18px]" />}
+            {/* Confirm Password - Signup only */}
+            {!isLogin && (
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-800">
+                  Confirm password
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
                   value={fields.confirm}
-                  error={errors.confirm}
-                  autoComplete="new-password"
-                  placeholder="Repeat your password"
                   onChange={set("confirm")}
+                  required={!isLogin}
+                  placeholder="Confirm your password"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
                 />
-              )}
+              </div>
+            )}
 
-              <Button
-                type="submit"
-                className="w-full py-3 text-[15px]"
-                loading={mutation.isPending}
-              >
-                {mode === "signin" ? "Sign in" : "Create account"}
-                {!mutation.isPending && <ArrowRight className="size-4" />}
-              </Button>
-            </form>
+            {/* Remember me */}
+            {isLogin && (
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 rounded border-gray-300 accent-indigo-600"
+                />
+                <span className="text-xs text-gray-500">
+                  Keep me signed in for 30 days
+                </span>
+              </label>
+            )}
 
-            <p className="mt-6 text-center text-xs leading-relaxed text-sub">
-              {mode === "signin" ? "New to MedCare?" : "Already have an account?"}{" "}
-              <button
-                type="button"
-                onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
-                className="font-semibold text-primary hover:text-primary-strong"
-              >
-                {mode === "signin" ? "Create an account" : "Sign in"}
-              </button>
-            </p>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition-all hover:bg-indigo-700 active:scale-[0.99] disabled:opacity-70 disabled:hover:scale-100"
+            >
+              {mutation.isPending ? "Please wait..." : isLogin ? "Sign in" : "Create account"}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="my-5 flex items-center gap-4">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+              Or continue with
+            </span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
 
-          <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-[11px] font-medium text-sub">
-            <ShieldCheck className="size-3.5 text-accent" />
-            Protected with encrypted credentials
+          {/* Google */}
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
+          >
+            <span className="font-bold">G</span>
+            Continue with Google
+          </button>
+
+          {/* Bottom toggle */}
+          <p className="mt-5 text-center text-xs text-gray-500">
+            {isLogin
+              ? "Don't have a MedCare account?"
+              : "Already have a MedCare account?"}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(isLogin ? "signup" : "signin");
+                setFields(INITIAL);
+              }}
+              className="ml-1 font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              {isLogin ? "Create an account" : "Sign in"}
+            </button>
           </p>
+
+          {/* Security */}
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+            <span className="text-green-500">✓</span>
+            Your data is encrypted and secure
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  icon,
-  value,
-  onChange,
-  error,
-  trailing,
-  className,
-  ...rest
-}: {
-  label: string;
-  icon: React.ReactNode;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  trailing?: React.ReactNode;
-  className?: string;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
-  const hasError = Boolean(error);
-  const id = useMemo(() => `field-${label.toLowerCase().replace(/\W+/g, "-")}`, [label]);
-  return (
-    <div className={className}>
-      <label
-        htmlFor={id}
-        className={cn(
-          "mb-1.5 block pl-1 text-xs font-semibold tracking-wide uppercase",
-          hasError ? "text-danger" : "text-sub",
-        )}
-      >
-        {label}
-      </label>
-      <div
-        className={cn(
-          "group flex items-center gap-3 rounded-2xl border bg-card-subtle px-4 transition-all",
-          "focus-within:border-primary focus-within:bg-card focus-within:ring-4 focus-within:ring-primary/10",
-          hasError
-            ? "border-danger/70 focus-within:border-danger focus-within:ring-danger/10"
-            : "border-line",
-        )}
-      >
-        <span className={cn("text-sub", hasError && "text-danger")}>{icon}</span>
-        <input
-          {...rest}
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-12 w-full bg-transparent text-sm font-medium text-ink placeholder:font-normal placeholder:text-sub/70 focus:outline-none"
-        />
-        {trailing}
-      </div>
-      {hasError && (
-        <p className="mt-1.5 flex items-center gap-1.5 pl-1 text-xs font-medium text-danger">
-          <AlertCircle className="size-3.5" />
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function BrandLockup() {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-white shadow-[0_8px_20px_-6px_rgb(79_70_229/0.55)]">
-        <HeartPulse className="size-5" />
-      </span>
-      <div className="leading-tight">
-        <p className="text-lg font-extrabold tracking-tight text-ink">MedCare</p>
-        <p className="text-[11px] font-semibold tracking-wider text-sub uppercase">
-          Control Tower
-        </p>
-      </div>
+      </section>
     </div>
   );
 }
 
 function BrandPanel() {
   return (
-    <aside className="relative hidden w-[46%] max-w-[560px] overflow-hidden lg:block">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-strong to-secondary" />
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 20% 20%, rgb(255 255 255 / 0.35) 0%, transparent 40%), radial-gradient(circle at 80% 30%, rgb(139 92 246 / 0.7) 0%, transparent 45%), radial-gradient(circle at 50% 90%, rgb(20 184 166 / 0.5) 0%, transparent 40%)",
-        }}
-      />
-      <div className="absolute -top-24 -right-24 size-96 rounded-full bg-white/10 blur-2xl" />
-      <div className="absolute -bottom-32 -left-20 size-96 rounded-full bg-black/20 blur-2xl" />
+    <aside className="relative hidden w-[46%] max-w-[560px] overflow-hidden bg-indigo-600 lg:block">
+      <div className="relative h-full overflow-hidden bg-[#4c3df5]">
+        <AnimatedBackground />
 
-      <div className="relative flex h-full flex-col justify-between p-12">
-        <div className="flex items-center gap-3 text-white">
-          <span className="grid size-11 place-items-center rounded-2xl bg-white/15 backdrop-blur-sm">
-            <HeartPulse className="size-5" />
-          </span>
-          <div className="leading-tight">
-            <p className="text-lg font-extrabold tracking-tight">MedCare</p>
-            <p className="text-[11px] font-semibold tracking-wider text-white/70 uppercase">
-              Control Tower
+        {/* Hero Content Layer */}
+        <div className="relative z-10 flex h-full flex-col justify-between p-12">
+          {/* Header */}
+          <div className="flex items-center gap-3 text-white">
+            <span className="grid size-12 place-items-center rounded-2xl bg-white/15 backdrop-blur-sm">
+              <HeartPulse className="size-6" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-2xl font-extrabold tracking-tight">MedCare</p>
+              <p className="text-sm font-semibold tracking-wider text-white/70 uppercase">
+                Control Tower
+              </p>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div>
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-white/12 px-4 py-1.5 text-sm font-semibold text-white/85 backdrop-blur-sm">
+              Demand sensing · Expiry-aware planning
+            </div>
+            <h1 className="text-5xl leading-[1.15] font-extrabold tracking-tight text-white">
+              Pharmacy supply chain,
+              <br />
+              reimagined.
+            </h1>
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-white/80">
+              A single control tower that senses demand, prevents shortages and
+              rescues expiring stock — in real time.
             </p>
           </div>
-        </div>
 
-        <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold text-white/85 backdrop-blur-sm">
-            <Sparkles className="size-3.5" />
-            Demand sensing · Expiry-aware planning
-          </div>
-          <h1 className="text-4xl leading-[1.15] font-extrabold tracking-tight text-white">
-            Pharmacy supply chain,
-            <br />
-            reimagined.
-          </h1>
-          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-white/80">
-            A single control tower that senses demand, prevents shortages and
-            rescues expiring stock — in real time.
+          {/* Footer */}
+          <p className="text-sm font-medium text-white/60">
+            © {new Date().getFullYear()} MedCare Pharma Supply Chain · Control Tower
           </p>
-
-          <ul className="mt-8 space-y-3">
-            {[
-              "Real-time shortage & expiry watchlists",
-              "Probabilistic demand forecasting",
-              "Expiry-aware stock transfers",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-sm text-white/90">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/15">
-                  <ShieldCheck className="size-3.5" />
-                </span>
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
-
-        <p className="text-xs font-medium text-white/60">
-          © {new Date().getFullYear()} MedCare Pharma Supply Chain · Control Tower
-        </p>
       </div>
     </aside>
   );
